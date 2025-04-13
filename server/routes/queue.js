@@ -21,7 +21,6 @@ router.post('/join', async (req, res) => {
   if (!name) return res.status(400).json({ message: 'Name is required' });
   
   try {
-    // Create queue item with the new fields
     const queueItem = new Queue({
       name,
       phone,
@@ -33,7 +32,6 @@ router.post('/join', async (req, res) => {
     const savedItem = await queueItem.save();
     console.log('Queue item added:', savedItem);
     
-    // Get the Socket.IO instance from app settings
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', await Queue.find());
@@ -55,39 +53,26 @@ router.get('/status/:id', async (req, res) => {
       return res.status(404).json({ message: 'Queue item not found' });
     }
     
-    // Calculate position in queue
     let waitingItems;
-    
     if (queueItem.priority !== 'none') {
-      // For priority customers, count only those with higher or equal priority
       waitingItems = await Queue.find({
         status: 'waiting',
         priority: queueItem.priority,
         joinTime: { $lte: queueItem.joinTime }
       }).sort({ joinTime: 1 });
     } else {
-      // For regular customers, count all non-priority customers
       waitingItems = await Queue.find({
         status: 'waiting',
         priority: 'none',
         joinTime: { $lte: queueItem.joinTime }
       }).sort({ joinTime: 1 });
-      
-      // Count how many priority customers are ahead (they all go first)
       const priorityCount = await Queue.countDocuments({
         status: 'waiting',
         priority: { $ne: 'none' }
       });
-      
-      // Add priority count to position
-      const regularPosition = waitingItems.findIndex(item => 
-        item._id.toString() === queueItem._id.toString()
-      ) + 1;
-      
-      // Return with adjusted position
+      const regularPosition = waitingItems.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
       const position = priorityCount + regularPosition;
-      const estimatedWaitMinutes = position * 5; // 5 minutes per person
-      
+      const estimatedWaitMinutes = position * 5;
       return res.json({
         ...queueItem.toObject(),
         position,
@@ -95,12 +80,7 @@ router.get('/status/:id', async (req, res) => {
       });
     }
     
-    // For priority customers, calculate their position among same priority
-    const position = waitingItems.findIndex(item => 
-      item._id.toString() === queueItem._id.toString()
-    ) + 1;
-    
-    // Calculate estimated wait time (example: 5 min per person)
+    const position = waitingItems.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
     const estimatedWaitMinutes = position * 5;
     
     res.json({
@@ -108,7 +88,6 @@ router.get('/status/:id', async (req, res) => {
       position,
       estimatedWaitMinutes
     });
-    
   } catch (err) {
     console.error('Queue status error:', err);
     res.status(500).json({ message: err.message });
@@ -118,14 +97,12 @@ router.get('/status/:id', async (req, res) => {
 // Process next
 router.post('/process', async (req, res) => {
   try {
-    // First check if we have any priority customers
     let item = await Queue.findOneAndUpdate(
       { status: 'waiting', priority: { $ne: 'none' } },
       { status: 'processing' },
       { new: true, sort: { joinTime: 1 } }
     );
     
-    // If no priority customers, process the next person by join time
     if (!item) {
       item = await Queue.findOneAndUpdate(
         { status: 'waiting' },
@@ -135,8 +112,6 @@ router.post('/process', async (req, res) => {
     }
     
     console.log('Processed next:', item);
-    
-    // Get the Socket.IO instance from app settings
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', await Queue.find());
@@ -159,8 +134,6 @@ router.post('/complete/:id', async (req, res) => {
     );
     
     console.log('Completed:', completedItem);
-    
-    // Get the Socket.IO instance from app settings
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', await Queue.find());
@@ -178,8 +151,6 @@ router.delete('/clear', async (req, res) => {
   try {
     await Queue.deleteMany({});
     console.log('Queue cleared');
-    
-    // Get the Socket.IO instance from app settings
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', []);

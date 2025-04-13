@@ -8,29 +8,22 @@ const Queue = require('./models/Queue');
 const queueRouter = require('./routes/queue');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({
-  origin: `http://${require('ip').address()}:${port}`, // Dynamic CORS origin
-  methods: ['GET', 'POST', 'DELETE']
-}));
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE'] })); // Allow all origins for now; update with Render URL later
 app.use(express.json());
 
-// Serve static files from the client folder
-app.use(express.static('D:/i-smartqueue/client'));
+// Serve static files from the client folder using a relative path
+app.use(express.static(path.join(__dirname, '../client')));
 
 // API Routes - MUST be defined BEFORE the catch-all route
 app.use('/api/queue', queueRouter);
 
 // QR Code route - MUST be defined BEFORE the catch-all route
-// This route isn't in queueRouter, so we need to define it separately
 app.get('/api/queue/qr', async (req, res) => {
   try {
-    const ip = require('ip');
-    const address = ip.address() + ':' + port;
-    // Changed this to point to the registration page
-    const qrCodeUrl = await QRCode.toDataURL(`http://${address}/register`);
+    const qrCodeUrl = await QRCode.toDataURL(`https://i-smartqueue.onrender.com/register`); // Update with your Render URL
     console.log('Serving QR Code URL:', qrCodeUrl);
     res.json({ qrCode: qrCodeUrl });
   } catch (err) {
@@ -41,20 +34,20 @@ app.get('/api/queue/qr', async (req, res) => {
 
 // New route for registration page
 app.get('/register', (req, res) => {
-  console.log('Serving register.html from:', 'D:/i-smartqueue/client/register.html');
-  res.sendFile('D:/i-smartqueue/client/register.html');
+  console.log('Serving register.html');
+  res.sendFile(path.join(__dirname, '../client/register.html'));
 });
 
 // New route for confirmation page
 app.get('/confirmation', (req, res) => {
-  console.log('Serving confirmation.html from:', 'D:/i-smartqueue/client/confirmation.html');
-  res.sendFile('D:/i-smartqueue/client/confirmation.html');
+  console.log('Serving confirmation.html');
+  res.sendFile(path.join(__dirname, '../client/confirmation.html'));
 });
 
 // Serve index.html as the default route
 app.get('/', (req, res) => {
-  console.log('Serving index.html from:', 'D:/i-smartqueue/client/index.html');
-  res.sendFile('D:/i-smartqueue/client/index.html');
+  console.log('Serving index.html');
+  res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
 // Catch-all for undefined routes - MUST be the LAST route defined
@@ -64,20 +57,21 @@ app.get('*', (req, res) => {
 });
 
 // MongoDB Connection
-mongoose.connect('mongodb://localhost:27017/ismartqueue')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Socket.IO
-const server = app.listen(port, () => {
-  const ip = require('ip');
-  const address = ip.address() + ':' + port;
-  console.log(`Server running on port ${port} at http://${address}`);
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
 });
 
 const io = new Server(server, {
   cors: {
-    origin: `http://${require('ip').address()}:${port}`, // Allow CORS from the dynamic IP
+    origin: '*', // Allow all origins for now; update with Render URL later
     methods: ['GET', 'POST']
   }
 });
@@ -102,14 +96,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('processNext', async () => {
-    // First check for priority customers
     let item = await Queue.findOneAndUpdate(
       { status: 'waiting', priority: { $ne: 'none' } },
       { status: 'processing' },
       { new: true, sort: { joinTime: 1 } }
     );
     
-    // If no priority customers, get the next person by join time
     if (!item) {
       item = await Queue.findOneAndUpdate(
         { status: 'waiting' },

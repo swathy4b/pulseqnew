@@ -18,11 +18,9 @@ const queueSchema = new mongoose.Schema({
 queueSchema.pre('save', async function(next) {
   if (!this.queueNumber) {
     try {
-      // Find the highest queue number and increment by 1
-      const highestQueue = await this.constructor.findOne({}, {queueNumber: 1})
-        .sort({queueNumber: -1})
+      const highestQueue = await this.constructor.findOne({}, { queueNumber: 1 })
+        .sort({ queueNumber: -1 })
         .limit(1);
-      
       this.queueNumber = highestQueue && highestQueue.queueNumber ? highestQueue.queueNumber + 1 : 1;
       next();
     } catch (error) {
