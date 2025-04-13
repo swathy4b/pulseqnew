@@ -10,8 +10,25 @@ const queueRouter = require('./routes/queue');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Add MongoDB reconnection logic
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected - attempting to reconnect');
+  setTimeout(() => {
+    mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      socketTimeoutMS: 45000
+    });
+  }, 5000);
+});
+
 // Middleware
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE'] })); // Allow all origins for now; update with Render URL later
+app.use(cors({ 
+  origin: '*', 
+  methods: ['GET', 'POST', 'DELETE'] 
+})); // Allow all origins for now; update with Render URL later
 app.use(express.json());
 
 // Serve static files from the client folder using a relative path
@@ -56,13 +73,22 @@ app.get('*', (req, res) => {
   res.status(404).send('Page not found. Please use the root URL.');
 });
 
-// MongoDB Connection
+// MongoDB Connection - IMPROVED VERSION
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue', {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,  // Increase timeout to 30 seconds
+  connectTimeoutMS: 30000,          // Increase connection timeout to 30 seconds
+  socketTimeoutMS: 45000            // Increase socket timeout to 45 seconds
 })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => {
+  console.error('MongoDB connection error details:', err);
+  console.log('MongoDB URI (partial for security):', 
+    process.env.MONGODB_URI ? 
+    process.env.MONGODB_URI.substring(0, 20) + '...' : 
+    'Not set - using local fallback');
+});
 
 // Socket.IO
 const server = app.listen(port, '0.0.0.0', () => {
@@ -81,43 +107,58 @@ app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
-
+  
   socket.on('joinQueue', async (data) => {
-    const { name, phone, priority, notification } = data;
-    const queueItem = new Queue({ 
-      name, 
-      phone, 
-      status: 'waiting',
-      priority: priority || 'none',
-      notification: notification || false 
-    });
-    await queueItem.save();
-    io.emit('queueUpdate', await Queue.find());
+    try {
+      const { name, phone, priority, notification } = data;
+      const queueItem = new Queue({
+        name,
+        phone,
+        status: 'waiting',
+        priority: priority || 'none',
+        notification: notification || false
+      });
+      await queueItem.save();
+      io.emit('queueUpdate', await Queue.find());
+    } catch (error) {
+      console.error('Join queue error:', error);
+      socket.emit('error', { message: 'Failed to join queue. Please try again.' });
+    }
   });
-
+  
   socket.on('processNext', async () => {
-    let item = await Queue.findOneAndUpdate(
-      { status: 'waiting', priority: { $ne: 'none' } },
-      { status: 'processing' },
-      { new: true, sort: { joinTime: 1 } }
-    );
-    
-    if (!item) {
-      item = await Queue.findOneAndUpdate(
-        { status: 'waiting' },
+    try {
+      let item = await Queue.findOneAndUpdate(
+        { status: 'waiting', priority: { $ne: 'none' } },
         { status: 'processing' },
         { new: true, sort: { joinTime: 1 } }
       );
+      
+      if (!item) {
+        item = await Queue.findOneAndUpdate(
+          { status: 'waiting' },
+          { status: 'processing' },
+          { new: true, sort: { joinTime: 1 } }
+        );
+      }
+      
+      if (item) io.emit('queueUpdate', await Queue.find());
+    } catch (error) {
+      console.error('Process next error:', error);
+      socket.emit('error', { message: 'Failed to process next in queue. Please try again.' });
     }
-    
-    if (item) io.emit('queueUpdate', await Queue.find());
   });
-
+  
   socket.on('clearQueue', async () => {
-    await Queue.deleteMany({});
-    io.emit('queueUpdate', []);
+    try {
+      await Queue.deleteMany({});
+      io.emit('queueUpdate', []);
+    } catch (error) {
+      console.error('Clear queue error:', error);
+      socket.emit('error', { message: 'Failed to clear queue. Please try again.' });
+    }
   });
-
+  
   socket.on('disconnect', (reason) => {
     console.log('User disconnected:', socket.id, 'Reason:', reason);
   });
