@@ -10,7 +10,7 @@ const queueRouter = require('./routes/queue');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Add MongoDB reconnection logic
+// Add MongoDB reconnection logics
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected - attempting to reconnect');
   setTimeout(() => {
