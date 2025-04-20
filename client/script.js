@@ -86,55 +86,57 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   }
 
-  // Update queue UI
-  function updateQueueUI(queue) {
-      queueItemsContainer.innerHTML = '';
-      const waiting = queue.filter(item => item.status === 'waiting');
-      const processing = queue.find(item => item.status === 'processing');
+  // Update queue UI function with fixed overflow queue rendering
+function updateQueueUI(queue) {
+  queueItemsContainer.innerHTML = '';
+  overflowQueueItems.innerHTML = ''; // Clear overflow queue items container
+  
+  const waiting = queue.filter(item => item.status === 'waiting');
+  const processing = queue.find(item => item.status === 'processing');
 
-      // Determine if we need to show overflow queue
-      const crowdSize = getCrowdSize();
-      if (crowdSize > 10 && waiting.length > 5) {
-          // Split the queue into main and overflow
-          const mainQueueItems = waiting.slice(0, 5);
-          const overflowQueueItems = waiting.slice(5);
-          
-          // Update main queue
-          mainQueueItems.forEach(item => renderQueueItem(item, queueItemsContainer));
-          if (processing) renderQueueItem(processing, queueItemsContainer);
-          
-          // Update overflow queue
-          overflowQueue.classList.add('show');
-          mainContent.classList.add('with-overflow');
-          
-          // Update overflow queue items
-          overflowQueueItems.innerHTML = '';
-          overflowQueueItems.forEach(item => renderQueueItem(item, overflowQueueItems));
-          
-          // Update overflow stats
-          overflowQueueStats.textContent = `Overflow: ${overflowQueueItems.length} customers`;
-      } else {
-          // Show all in main queue
-          waiting.forEach(item => renderQueueItem(item, queueItemsContainer));
-          if (processing) renderQueueItem(processing, queueItemsContainer);
-          
-          // Hide overflow queue
-          overflowQueue.classList.remove('show');
-          mainContent.classList.remove('with-overflow');
-      }
+  // Determine if we need to show overflow queue
+  const crowdSize = getCrowdSize();
+  if (crowdSize > 10 && waiting.length > 5) {
+      // Split the queue into main and overflow
+      const mainQueueItems = waiting.slice(0, 5);
+      const overflowQueueItems = waiting.slice(5);
       
-      // Update queue stats in the format from the old code
-      queueStatsEl.textContent = `${waiting.length} ${waiting.length === 1 ? 'person' : 'people'} waiting`;
+      // Update main queue
+      mainQueueItems.forEach(item => renderQueueItem(item, queueItemsContainer));
+      if (processing) renderQueueItem(processing, queueItemsContainer);
       
-      // Update now serving and next up (using queueNumber like in the old code)
-      nowServingEl.textContent = processing ? processing.queueNumber || '--' : '--';
+      // Update overflow queue
+      overflowQueue.classList.add('show');
+      mainContent.classList.add('with-overflow');
       
-      if (waiting.length > 0) {
-          nextUpEl.textContent = waiting[0].queueNumber || '--';
-      } else {
-          nextUpEl.textContent = '--';
-      }
+      // Update overflow queue items - FIX: Use the DOM element, not the variable
+      document.getElementById('overflowQueueItems').innerHTML = '';
+      overflowQueueItems.forEach(item => renderQueueItem(item, document.getElementById('overflowQueueItems')));
+      
+      // Update overflow stats
+      overflowQueueStats.textContent = `Overflow: ${overflowQueueItems.length} customers`;
+  } else {
+      // Show all in main queue
+      waiting.forEach(item => renderQueueItem(item, queueItemsContainer));
+      if (processing) renderQueueItem(processing, queueItemsContainer);
+      
+      // Hide overflow queue
+      overflowQueue.classList.remove('show');
+      mainContent.classList.remove('with-overflow');
   }
+  
+  // Update queue stats in the format from the old code
+  queueStatsEl.textContent = `${waiting.length} ${waiting.length === 1 ? 'person' : 'people'} waiting`;
+  
+  // Update now serving and next up (using queueNumber like in the old code)
+  nowServingEl.textContent = processing ? processing.queueNumber || '--' : '--';
+  
+  if (waiting.length > 0) {
+      nextUpEl.textContent = waiting[0].queueNumber || '--';
+  } else {
+      nextUpEl.textContent = '--';
+  }
+}
   
   // Render individual queue item (following the structure from the old code)
   function renderQueueItem(item, container) {
