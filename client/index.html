@@ -13,9 +13,14 @@
         <header class="header">
             <h1>I-SmartQueue</h1>
             <p class="subtitle">Revolutionize Your Queue Experience with AI</p>
-            <button class="settings-btn" aria-label="Open Settings">
-                <i class="fas fa-cog"></i>
-            </button>
+            <div class="header-buttons">
+                <button class="monitor-btn" id="liveMonitoringBtn" aria-label="Live Monitoring">
+                    <i class="fas fa-video"></i> Live Monitoring
+                </button>
+                <button class="settings-btn" aria-label="Open Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
         </header>
 
         <main class="main-content">
@@ -49,6 +54,17 @@
                     </button>
                 </div>
             </section>
+
+            <!-- This section will be shown when crowd size exceeds 10 -->
+            <section class="queue-section overflow-queue" id="overflowQueue">
+                <div class="queue-header">
+                    <h2>Overflow Queue</h2>
+                    <span class="queue-stats" id="overflowQueueStats">0 people waiting</span>
+                </div>
+                <div class="queue-items" id="overflowQueueItems">
+                    <!-- Overflow queue items will be added dynamically -->
+                </div>
+            </section>
         </main>
 
         <aside class="queue-display">
@@ -63,10 +79,102 @@
             <div class="analytics-preview">
                 <h3>Quick Stats</h3>
                 <p id="avgWaitTime">Avg Wait: -- min</p>
+                <p id="liveCount">Live Count: -- people</p>
             </div>
         </aside>
     </div>
 
+    <!-- Notification panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <button class="close-btn" id="closeNotifications">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <!-- Notifications will be added here -->
+        </div>
+    </div>
+
+    <!-- Live monitoring modal -->
+    <div class="modal" id="liveMonitoringModal">
+        <div class="modal-content live-monitoring-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Live Crowd Monitoring</h2>
+                <button class="close-btn" id="closeLiveMonitoring">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="live-feed">
+                <div class="video-container">
+                    <img src="/api/placeholder/640/480" alt="Live camera feed" id="liveFeed">
+                    <div class="detection-overlay" id="detectionOverlay">
+                        <!-- Detection boxes will be added here -->
+                    </div>
+                </div>
+                <div class="detection-stats">
+                    <div class="stats-card">
+                        <h3>Current Count</h3>
+                        <div class="stat-value" id="currentCount">0</div>
+                    </div>
+                    <div class="stats-card">
+                        <h3>Status</h3>
+                        <div class="stat-value status" id="crowdStatus">Normal</div>
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-section">
+                <button class="analysis-btn" id="showAnalysisDashboard">
+                    <i class="fas fa-chart-bar"></i> Crowd Analysis Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis dashboard modal -->
+    <div class="modal" id="analysisDashboardModal">
+        <div class="modal-content analysis-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Crowd Analysis Dashboard</h2>
+                <button class="close-btn" id="closeAnalysisDashboard">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-metrics">
+                <div class="metric-card">
+                    <h3>Daily Peak</h3>
+                    <div class="metric-value" id="dailyPeak">0</div>
+                    <div class="metric-time" id="peakTime">at --:--</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Daily Average</h3>
+                    <div class="metric-value" id="dailyAverage">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Daily Minimum</h3>
+                    <div class="metric-value" id="dailyMinimum">0</div>
+                    <div class="metric-time" id="minTime">at --:--</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Busy Hours</h3>
+                    <div class="metric-value" id="busyHours">--:-- to --:--</div>
+                </div>
+            </div>
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3>Hourly Crowd Trends</h3>
+                    <canvas id="hourlyTrendChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Weekly Patterns</h3>
+                    <canvas id="weeklyPatternsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Join queue modal -->
     <div class="modal" id="joinModal">
         <div class="modal-content">
             <h2 class="modal-title">Join the Queue</h2>
@@ -94,7 +202,13 @@
         </div>
     </div>
 
+    <button class="notification-toggle" id="toggleNotifications">
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge" id="notificationBadge">0</span>
+    </button>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
