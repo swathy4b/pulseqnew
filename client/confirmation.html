@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Confirmation - I-SmartQueue</title>
+    <title>Queue Confirmation - PulseQ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -205,10 +205,16 @@
     </style>
 </head>
 <body>
+    <div class="pulseq-logo">PulseQ</div>
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    
     <div class="container">
-        <h1>You're in the Queue!</h1>
-        <p class="subtitle">Thank you for using I-SmartQueue</p>
-
+        <div class="header">
+            <div class="logo"><i class="fas fa-people-arrows"></i></div>
+            <h1>PulseQ</h1>
+            <p class="subtitle">Your queue confirmation</p>
+        </div>
         <div class="status-icon">
             <i class="fas fa-check-circle"></i>
         </div>
@@ -237,6 +243,10 @@
         <button class="refresh-button" id="refreshStatus">
             <i class="fas fa-sync-alt refresh-icon"></i> Refresh Status
         </button>
+    </div>
+
+    <div class="footer">
+        <p>Thanks for using PulseQ</p>
     </div>
 
     <script>
@@ -318,5 +328,23 @@
             }
         });
     </script>
+
+    <!-- Confirmation Success Card -->
+    <div class="confirmation-card">
+        <div class="confirmation-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2>Successfully Joined the Queue!</h2>
+        <div class="queue-position">
+            <span class="position-number">3</span>
+            <div class="position-label">You are number <b>3</b> in the queue</div>
+        </div>
+        <div class="customer-summary">
+            <div><b>Name:</b> John Doe</div>
+            <div><b>Phone:</b> +91-9876543210</div>
+        </div>
+        <div class="confirmation-message">Please wait for your turn. You will be notified when you are about to be served.</div>
+        <a href="index.html" class="back-btn">Back to Home</a>
+    </div>
 </body>
 </html>

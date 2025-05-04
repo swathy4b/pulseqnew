@@ -6,9 +6,14 @@ const path = require('path');
 const { Server } = require('socket.io');
 const Queue = require('./models/Queue');
 const queueRouter = require('./routes/queue');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const { spawn } = require('child_process');
+const http = require('http').createServer(express());
+const io = require('socket.io')(http);
+const bodyParser = require('body-parser');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 // Add MongoDB reconnection logics
 mongoose.connection.on('disconnected', () => {
@@ -25,14 +30,9 @@ mongoose.connection.on('disconnected', () => {
 });
 
 // Middleware
-app.use(cors({ 
-  origin: '*', 
-  methods: ['GET', 'POST', 'DELETE'] 
-})); // Allow all origins for now; update with Render URL later
-app.use(express.json());
-
-// Serve static files from the client folder using a relative path
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('client'));
 
 // API Routes - MUST be defined BEFORE the catch-all route
 app.use('/api/queue', queueRouter);
@@ -67,10 +67,44 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
+// Proxy /detection/feed as a raw stream (for the live video feed)
+app.get('/detection/feed', (req, res) => {
+  const proxyReq = http.request(
+    {
+      hostname: 'localhost',
+      port: 5000,
+      path: '/feed',
+      method: 'GET',
+      headers: req.headers,
+    },
+    proxyRes => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res);
+    }
+  );
+  proxyReq.on('error', err => {
+    res.status(500).send('Proxy error');
+  });
+  proxyReq.end();
+});
+
+// Proxy all other /detection/* requests to Flask
+app.use('/detection', createProxyMiddleware({
+  target: 'http://localhost:5000',
+  changeOrigin: true,
+  pathRewrite: { '^/detection': '' }
+}));
+
 // Catch-all for undefined routes - MUST be the LAST route defined
 app.get('*', (req, res) => {
   console.log(`404 Error for path: ${req.path} from ${req.ip}`);
   res.status(404).send('Page not found. Please use the root URL.');
+});
+
+// Start Flask as a child process
+const pythonProcess = spawn('python', [path.join(__dirname, 'app.py')], {
+  stdio: 'inherit',
+  shell: true
 });
 
 // MongoDB Connection - IMPROVED VERSION
@@ -91,19 +125,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartque
 });
 
 // Socket.IO
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`);
+http.listen(port, '0.0.0.0', () => {
+  console.log(`Node.js server running on port ${port}`);
 });
-
-const io = new Server(server, {
-  cors: {
-    origin: '*', // Allow all origins for now; update with Render URL later
-    methods: ['GET', 'POST']
-  }
-});
-
-// Make io available to the routes
-app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);

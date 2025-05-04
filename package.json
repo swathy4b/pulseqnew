@@ -1,19 +1,15 @@
 {
-  "name": "i-smartqueue",
+  "name": "pulseq",
   "version": "1.0.0",
+  "description": "AI-powered queue and public safety management system",
+  "main": "server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "ip": "^1.1.8",
-    "mongoose": "^8.0.0",
-    "qrcode": "^1.5.3",
-    "socket.io": "^4.7.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+    "socket.io": "^4.7.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
   }
 }
