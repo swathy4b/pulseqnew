@@ -69,10 +69,13 @@ app.get('/', (req, res) => {
 
 // Proxy /detection/feed as a raw stream (for the live video feed)
 app.get('/detection/feed', (req, res) => {
+  const pythonPort = process.env.PYTHON_PORT || 5000;
+  console.log(`Proxying to Python server on port ${pythonPort}`);
+  
   const proxyReq = http.request(
     {
       hostname: 'localhost',
-      port: process.env.PYTHON_PORT || 5000,
+      port: pythonPort,
       path: '/feed',
       method: 'GET',
       headers: req.headers,
@@ -83,14 +86,17 @@ app.get('/detection/feed', (req, res) => {
     }
   );
   proxyReq.on('error', err => {
+    console.error('Proxy error:', err);
     res.status(500).send('Proxy error');
   });
   proxyReq.end();
 });
 
 // Proxy all other /detection/* requests to Flask
+const pythonPort = process.env.PYTHON_PORT || 5000;
+console.log(`Setting up proxy to Python server on port ${pythonPort}`);
 app.use('/detection', createProxyMiddleware({
-  target: `http://localhost:${process.env.PYTHON_PORT || 5000}`,
+  target: `http://localhost:${pythonPort}`,
   changeOrigin: true,
   pathRewrite: { '^/detection': '' }
 }));
