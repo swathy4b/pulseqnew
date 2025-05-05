@@ -4,8 +4,11 @@ pip install --upgrade pip
 pip install wheel
 pip install -r requirements.txt
 
+# Ensure Python can find OpenCV
+export PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH
+
 # Start the Python server in the background
-python server/app.py &
+python3 server/app.py &
 
 # Start the Node.js server (in the foreground)
 node server/server.js 
