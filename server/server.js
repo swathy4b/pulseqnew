@@ -72,7 +72,7 @@ app.get('/detection/feed', (req, res) => {
   const proxyReq = http.request(
     {
       hostname: 'localhost',
-      port: 5000,
+      port: process.env.PYTHON_PORT || 5000,
       path: '/feed',
       method: 'GET',
       headers: req.headers,
@@ -90,7 +90,7 @@ app.get('/detection/feed', (req, res) => {
 
 // Proxy all other /detection/* requests to Flask
 app.use('/detection', createProxyMiddleware({
-  target: 'http://localhost:5000',
+  target: `http://localhost:${process.env.PYTHON_PORT || 5000}`,
   changeOrigin: true,
   pathRewrite: { '^/detection': '' }
 }));

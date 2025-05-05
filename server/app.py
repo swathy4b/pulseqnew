@@ -335,4 +335,11 @@ if __name__ == '__main__':
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     print("Starting server in production mode (no debug, no watchdog)")
     port = int(os.environ.get('PORT', 5000))
-    socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    try:
+        socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+    except OSError as e:
+        if e.errno == 98:  # Address already in use
+            print(f"Port {port} is in use, trying port {port + 1}")
+            socketio.run(app, debug=False, host='0.0.0.0', port=port + 1, allow_unsafe_werkzeug=True)
+        else:
+            raise e
