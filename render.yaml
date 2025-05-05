@@ -2,23 +2,27 @@ services:
   - type: web
     name: pulseq-node
     env: node
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
+      - key: MONGODB_URI
+        value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
     healthCheckPath: /
 
   - type: web
     name: pulseq-python
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: python server/app.py
     envVars:
       - key: FLASK_ENV
         value: production
       - key: PORT
         value: 5000
+      - key: MONGODB_URI
+        value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
     healthCheckPath: / 
