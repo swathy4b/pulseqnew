@@ -5,4 +5,9 @@ mediapipe==0.10.0
 numpy==1.24.3
 python-engineio==4.5.1
 python-socketio==5.8.0
-eventlet==0.33.3 
+eventlet==0.33.3
+libgl1-mesa-glx
+libglib2.0-0
+libsm6
+libxext6
+libxrender-dev 
