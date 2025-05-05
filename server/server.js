@@ -32,15 +32,17 @@ mongoose.connection.on('disconnected', () => {
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static('client'));
 
-// API Routes - MUST be defined BEFORE the catch-all route
+// Serve static files from client directory
+app.use(express.static(path.join(__dirname, '../client')));
+
+// API Routes
 app.use('/api/queue', queueRouter);
 
-// QR Code route - MUST be defined BEFORE the catch-all route
+// QR Code route
 app.get('/api/queue/qr', async (req, res) => {
   try {
-    const qrCodeUrl = await QRCode.toDataURL(`https://i-smartqueue.onrender.com/register`); // Update with your Render URL
+    const qrCodeUrl = await QRCode.toDataURL(`https://i-smartqueue.onrender.com/register`);
     console.log('Serving QR Code URL:', qrCodeUrl);
     res.json({ qrCode: qrCodeUrl });
   } catch (err) {
@@ -49,19 +51,18 @@ app.get('/api/queue/qr', async (req, res) => {
   }
 });
 
-// New route for registration page
+// Routes for HTML pages
 app.get('/register', (req, res) => {
   console.log('Serving register.html');
   res.sendFile(path.join(__dirname, '../client/register.html'));
 });
 
-// New route for confirmation page
 app.get('/confirmation', (req, res) => {
   console.log('Serving confirmation.html');
   res.sendFile(path.join(__dirname, '../client/confirmation.html'));
 });
 
-// Serve index.html as the default route
+// Root route - serve index.html
 app.get('/', (req, res) => {
   console.log('Serving index.html');
   res.sendFile(path.join(__dirname, '../client/index.html'));
