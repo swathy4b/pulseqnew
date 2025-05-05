@@ -4,11 +4,12 @@ services:
     env: node
     buildCommand: |
       npm install
-      apt-get update && apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
+      apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
       pip install --upgrade pip
       pip install wheel
       pip install -r requirements.txt
-    startCommand: node server/server.js
+      chmod +x start.sh
+    startCommand: ./start.sh
     envVars:
       - key: NODE_ENV
         value: production
