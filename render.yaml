@@ -1,8 +1,13 @@
 services:
   - type: web
-    name: pulseq-node
+    name: pulseq
     env: node
-    buildCommand: npm install
+    buildCommand: |
+      npm install
+      apt-get update && apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
+      pip install --upgrade pip
+      pip install wheel
+      pip install -r requirements.txt
     startCommand: node server/server.js
     envVars:
       - key: NODE_ENV
@@ -11,22 +16,6 @@ services:
         value: 10000
       - key: MONGODB_URI
         value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
-    healthCheckPath: /
-
-  - type: web
-    name: pulseq-python
-    env: python
-    buildCommand: |
-      apt-get update && apt-get install -y libgl1-mesa-glx libglib2.0-0 libsm6 libxext6 libxrender-dev
-      pip install --upgrade pip
-      pip install wheel
-      pip install -r requirements.txt
-    startCommand: python server/app.py
-    envVars:
       - key: FLASK_ENV
         value: production
-      - key: PORT
-        value: 5000
-      - key: MONGODB_URI
-        value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
     healthCheckPath: / 

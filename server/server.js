@@ -101,10 +101,19 @@ app.get('*', (req, res) => {
   res.status(404).send('Page not found. Please use the root URL.');
 });
 
-// Start Flask as a child process
-const pythonProcess = spawn('python', [path.join(__dirname, 'app.py')], {
-  stdio: 'inherit',
-  shell: true
+// Start Python server
+const pythonProcess = spawn('python', ['server/app.py']);
+
+pythonProcess.stdout.on('data', (data) => {
+  console.log(`Python output: ${data}`);
+});
+
+pythonProcess.stderr.on('data', (data) => {
+  console.error(`Python error: ${data}`);
+});
+
+pythonProcess.on('close', (code) => {
+  console.log(`Python process exited with code ${code}`);
 });
 
 // MongoDB Connection - UPDATED VERSION
