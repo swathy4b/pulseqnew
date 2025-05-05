@@ -335,16 +335,15 @@ if __name__ == '__main__':
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     print("Starting server in production mode (no debug, no watchdog)")
     
-    # Try ports in sequence until we find an available one
-    ports = [5000, 5001, 5002, 5003, 5004]
-    for port in ports:
-        try:
-            print(f"Attempting to start server on port {port}")
-            socketio.run(app, debug=False, host='0.0.0.0', port=port)
-            break
-        except OSError as e:
-            if e.errno == 98:  # Address already in use
-                print(f"Port {port} is in use, trying next port")
-                continue
-            else:
-                raise e
+    # Get port from environment variable or use default
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting server on port {port}")
+    
+    try:
+        socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    except OSError as e:
+        if e.errno == 98:  # Address already in use
+            print(f"Port {port} is in use, trying port {port + 1}")
+            socketio.run(app, debug=False, host='0.0.0.0', port=port + 1)
+        else:
+            raise e
