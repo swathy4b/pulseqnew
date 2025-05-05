@@ -107,14 +107,8 @@ const pythonProcess = spawn('python', [path.join(__dirname, 'app.py')], {
   shell: true
 });
 
-// MongoDB Connection - IMPROVED VERSION
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverSelectionTimeoutMS: 30000,  // Increase timeout to 30 seconds
-  connectTimeoutMS: 30000,          // Increase connection timeout to 30 seconds
-  socketTimeoutMS: 45000            // Increase socket timeout to 45 seconds
-})
+// MongoDB Connection - UPDATED VERSION
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue')
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => {
   console.error('MongoDB connection error details:', err);
