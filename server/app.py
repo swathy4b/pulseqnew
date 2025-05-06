@@ -385,12 +385,12 @@ if __name__ == '__main__':
         # Try to start server
         try:
             print(f"Starting Flask server on port {port}...")
-            socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
+            socketio.run(app, debug=False, host='0.0.0.0', port=port)
         except OSError as e:
             if e.errno == 98:  # Address already in use
                 print(f"Port {port} is in use, trying port {port + 1}")
                 try:
-                    socketio.run(app, debug=False, host='0.0.0.0', port=port + 1, allow_unsafe_werkzeug=True)
+                    socketio.run(app, debug=False, host='0.0.0.0', port=port + 1)
                 except Exception as e:
                     print(f"Failed to start server on port {port + 1}: {str(e)}")
                     sys.exit(1)
