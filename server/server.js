@@ -43,7 +43,8 @@ app.use('/api/queue', queueRouter);
 // QR Code route
 app.get('/api/queue/qr', async (req, res) => {
   try {
-    const qrCodeUrl = await QRCode.toDataURL(`https://i-smartqueue.onrender.com/register`);
+    const baseUrl = process.env.BASE_URL || 'https://i-smartqueue.onrender.com';
+    const qrCodeUrl = await QRCode.toDataURL(`${baseUrl}/qr`);
     console.log('Serving QR Code URL:', qrCodeUrl);
     res.json({ qrCode: qrCodeUrl });
   } catch (err) {
@@ -72,6 +73,13 @@ app.get('/', (req, res) => {
   res.sendFile(filePath);
 });
 
+// Serve the main QR code page
+app.get('/qr', (req, res) => {
+  const filePath = path.join(clientDir, 'index.html');
+  console.log('Serving QR code page from:', filePath);
+  res.sendFile(filePath);
+});
+
 // Proxy /detection/feed as a raw stream (for the live video feed)
 app.get('/detection/feed', (req, res) => {
   console.log(`Proxying to Python server on port ${pythonPort}`);
@@ -93,10 +101,11 @@ app.use('/detection', createProxyMiddleware({
   pathRewrite: { '^/detection': '' }
 }));
 
-// Catch-all for undefined routes
+// Catch-all for undefined routes - serve index.html for SPA
 app.get('*', (req, res) => {
-  console.log(`404 Error for path: ${req.path} from ${req.ip}`);
-  res.status(404).send('Page not found. Please use the root URL.');
+  console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
+  const filePath = path.join(clientDir, 'index.html');
+  res.sendFile(filePath);
 });
 
 // Start Python server with explicit port
