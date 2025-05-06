@@ -15,26 +15,19 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = process.env.PORT || 10000;
 
-// Add MongoDB reconnection logics
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected - attempting to reconnect');
-  setTimeout(() => {
-    mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000,
-      connectTimeoutMS: 30000,
-      socketTimeoutMS: 45000
-    });
-  }, 5000);
-});
+// Get absolute paths
+const rootDir = path.resolve(__dirname, '..');
+const clientDir = path.join(rootDir, 'client');
+
+console.log('Root directory:', rootDir);
+console.log('Client directory:', clientDir);
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Serve static files from client directory
-app.use(express.static(path.join(__dirname, '../client')));
+app.use(express.static(clientDir));
 
 // API Routes
 app.use('/api/queue', queueRouter);
@@ -53,19 +46,22 @@ app.get('/api/queue/qr', async (req, res) => {
 
 // Routes for HTML pages
 app.get('/register', (req, res) => {
-  console.log('Serving register.html');
-  res.sendFile(path.join(__dirname, '../client/register.html'));
+  const filePath = path.join(clientDir, 'register.html');
+  console.log('Serving register.html from:', filePath);
+  res.sendFile(filePath);
 });
 
 app.get('/confirmation', (req, res) => {
-  console.log('Serving confirmation.html');
-  res.sendFile(path.join(__dirname, '../client/confirmation.html'));
+  const filePath = path.join(clientDir, 'confirmation.html');
+  console.log('Serving confirmation.html from:', filePath);
+  res.sendFile(filePath);
 });
 
 // Root route - serve index.html
 app.get('/', (req, res) => {
-  console.log('Serving index.html');
-  res.sendFile(path.join(__dirname, '../client/index.html'));
+  const filePath = path.join(clientDir, 'index.html');
+  console.log('Serving index.html from:', filePath);
+  res.sendFile(filePath);
 });
 
 // Proxy /detection/feed as a raw stream (for the live video feed)
@@ -102,7 +98,7 @@ app.use('/detection', createProxyMiddleware({
   pathRewrite: { '^/detection': '' }
 }));
 
-// Catch-all for undefined routes - MUST be the LAST route defined
+// Catch-all for undefined routes
 app.get('*', (req, res) => {
   console.log(`404 Error for path: ${req.path} from ${req.ip}`);
   res.status(404).send('Page not found. Please use the root URL.');
@@ -123,7 +119,7 @@ pythonProcess.on('close', (code) => {
   console.log(`Python process exited with code ${code}`);
 });
 
-// MongoDB Connection - UPDATED VERSION
+// MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue')
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => {
@@ -137,6 +133,13 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartque
 // Socket.IO
 http.listen(port, '0.0.0.0', () => {
   console.log(`Node.js server running on port ${port}`);
+  console.log('Available routes:');
+  console.log('- /');
+  console.log('- /register');
+  console.log('- /confirmation');
+  console.log('- /api/queue');
+  console.log('- /api/queue/qr');
+  console.log('- /detection/*');
 });
 
 io.on('connection', (socket) => {
