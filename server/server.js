@@ -8,11 +8,11 @@ const Queue = require('./models/Queue');
 const queueRouter = require('./routes/queue');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn } = require('child_process');
-const http = require('http').createServer(express());
+const app = express();
+const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 
-const app = express();
 const port = process.env.PORT || 10000;  // Node.js server port
 const pythonPort = 5000;  // Python server port
 
