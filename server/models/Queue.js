@@ -1,17 +1,40 @@
 const mongoose = require('mongoose');
 
 const queueSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  phone: { type: String },
-  status: { type: String, enum: ['waiting', 'processing', 'completed'], default: 'waiting' },
-  joinTime: { type: Date, default: Date.now },
-  queueNumber: { type: Number }, 
-  priority: { 
-    type: String, 
-    enum: ['none', 'elderly', 'disability', 'pregnant', 'children'], 
-    default: 'none' 
+  name: {
+    type: String,
+    required: true
   },
-  notification: { type: Boolean, default: false }
+  phone: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['waiting', 'processing', 'completed'],
+    default: 'waiting'
+  },
+  priority: {
+    type: String,
+    enum: ['none', 'elderly', 'pregnant', 'disabled'],
+    default: 'none'
+  },
+  notification: {
+    type: Boolean,
+    default: true
+  },
+  secretKey: {
+    type: String,
+    required: true
+  },
+  position: {
+    type: Number,
+    required: true
+  },
+  joinTime: {
+    type: Date,
+    default: Date.now
+  }
 });
 
 // Auto-generate queue number before saving

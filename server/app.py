@@ -244,6 +244,7 @@ def start_detection():
                 if not initialize_face_detection():
                     return jsonify({'error': 'Failed to initialize face detection model'}), 500
             
+            # Try to open webcam
             video_capture = cv2.VideoCapture(0)
             if not video_capture.isOpened():
                 logger.error("Could not open webcam")
@@ -253,7 +254,7 @@ def start_detection():
             video_thread = threading.Thread(target=video_processor, daemon=True)
             video_thread.start()
             logger.info("Detection started successfully")
-            socketio.emit('notification', {'message': 'Detection started'})
+            socketio.emit('notification', {'message': 'Detection started', 'type': 'success'})
             return jsonify({'status': 'started'})
         except Exception as e:
             logger.error(f"Start error: {str(e)}")

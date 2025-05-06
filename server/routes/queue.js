@@ -1,6 +1,18 @@
 const express = require('express');
 const Queue = require('../models/Queue');
 const router = express.Router();
+const crypto = require('crypto');
+
+// Generate a random secret key
+function generateSecretKey() {
+  return crypto.randomBytes(4).toString('hex').toUpperCase();
+}
+
+// Get current queue position
+async function getNextPosition() {
+  const lastItem = await Queue.findOne().sort({ position: -1 });
+  return lastItem ? lastItem.position + 1 : 1;
+}
 
 // Get current queue
 router.get('/', async (req, res) => {
@@ -16,31 +28,40 @@ router.get('/', async (req, res) => {
 
 // Join queue
 router.post('/join', async (req, res) => {
-  const { name, phone, priority, notification } = req.body;
-  
-  if (!name) return res.status(400).json({ message: 'Name is required' });
-  
   try {
+    const { name, phone, priority, notification } = req.body;
+    const position = await getNextPosition();
+    const secretKey = generateSecretKey();
+
     const queueItem = new Queue({
       name,
       phone,
-      status: 'waiting',
       priority: priority || 'none',
-      notification: notification || false
+      notification: notification !== false,
+      secretKey,
+      position
     });
-    
-    const savedItem = await queueItem.save();
-    console.log('Queue item added:', savedItem);
-    
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('queueUpdate', await Queue.find());
-    }
-    
-    res.status(201).json(savedItem);
-  } catch (err) {
-    console.error('Join queue error:', err);
-    res.status(500).json({ message: err.message });
+
+    await queueItem.save();
+
+    // Emit notification to all clients
+    req.app.get('io').emit('queueUpdate', {
+      type: 'join',
+      item: queueItem,
+      message: `New person joined the queue. Position: ${position}`
+    });
+
+    res.json({
+      success: true,
+      data: {
+        position,
+        secretKey,
+        message: `You have been added to the queue. Your position is ${position} and your secret key is ${secretKey}. Please keep this key safe.`
+      }
+    });
+  } catch (error) {
+    console.error('Join queue error:', error);
+    res.status(500).json({ error: 'Failed to join queue' });
   }
 });
 
@@ -94,8 +115,8 @@ router.get('/status/:id', async (req, res) => {
   }
 });
 
-// Process next
-router.post('/process', async (req, res) => {
+// Process next in queue
+router.post('/process-next', async (req, res) => {
   try {
     let item = await Queue.findOneAndUpdate(
       { status: 'waiting', priority: { $ne: 'none' } },
@@ -111,16 +132,25 @@ router.post('/process', async (req, res) => {
       );
     }
     
-    console.log('Processed next:', item);
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('queueUpdate', await Queue.find());
+    if (item) {
+      // Emit notification to all clients
+      req.app.get('io').emit('queueUpdate', {
+        type: 'process',
+        item,
+        message: `Processing position ${item.position}. Secret key: ${item.secretKey}`
+      });
+
+      // Send specific notification to the person being processed
+      req.app.get('io').emit('personalNotification', {
+        secretKey: item.secretKey,
+        message: `It's your turn! Please proceed to the counter.`
+      });
     }
-    
-    res.json(item || {});
-  } catch (err) {
-    console.error('Process next error:', err);
-    res.status(500).json({ message: err.message });
+
+    res.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Process next error:', error);
+    res.status(500).json({ error: 'Failed to process next in queue' });
   }
 });
 
@@ -160,6 +190,48 @@ router.delete('/clear', async (req, res) => {
   } catch (err) {
     console.error('Clear queue error:', err);
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Evacuate queue
+router.post('/evacuate', async (req, res) => {
+  try {
+    const waitingItems = await Queue.find({ status: 'waiting' });
+    
+    // Send evacuation notification to all waiting people
+    waitingItems.forEach(item => {
+      if (item.notification) {
+        req.app.get('io').emit('personalNotification', {
+          secretKey: item.secretKey,
+          message: 'EMERGENCY: Please evacuate the premises immediately!'
+        });
+      }
+    });
+
+    // Clear the queue
+    await Queue.deleteMany({});
+    
+    // Emit notification to all clients
+    req.app.get('io').emit('queueUpdate', {
+      type: 'evacuate',
+      message: 'Queue has been evacuated due to emergency'
+    });
+
+    res.json({ success: true, message: 'Queue evacuated successfully' });
+  } catch (error) {
+    console.error('Evacuate queue error:', error);
+    res.status(500).json({ error: 'Failed to evacuate queue' });
+  }
+});
+
+// Get queue status
+router.get('/status', async (req, res) => {
+  try {
+    const queue = await Queue.find().sort({ position: 1 });
+    res.json({ success: true, data: queue });
+  } catch (error) {
+    console.error('Get status error:', error);
+    res.status(500).json({ error: 'Failed to get queue status' });
   }
 });
 
