@@ -30,7 +30,8 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Serve static files from client directory
-app.use(express.static(clientDir));
+app.use(express.static(path.join(rootDir, 'client')));
+app.use('/static', express.static(path.join(rootDir, 'server/static')));
 
 // API Routes
 app.use('/api/queue', queueRouter);
