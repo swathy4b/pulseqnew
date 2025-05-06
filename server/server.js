@@ -14,6 +14,7 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const httpProxy = require('http-proxy');
 
+// Use different ports for Node.js and Python servers
 const port = process.env.PORT || 10000;  // Node.js server port
 const pythonPort = 5000;  // Python server port
 
