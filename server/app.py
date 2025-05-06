@@ -255,12 +255,6 @@ def generate_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-@app.route('/')
-def index():
-    """Render main page"""
-    logger.debug("Rendering index page")
-    return render_template('index.html')
-
 @app.route('/video_feed')
 def video_feed():
     """Serve the video feed"""
