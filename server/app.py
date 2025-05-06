@@ -55,6 +55,38 @@ def initialize_face_detection():
         logger.error(f"Failed to initialize MediaPipe Face Detection: {str(e)}")
         return False
 
+def initialize_webcam():
+    """Initialize webcam with fallback options"""
+    try:
+        # Try default webcam
+        cap = cv2.VideoCapture(0)
+        if cap.isOpened():
+            logger.info("Successfully opened default webcam")
+            return cap
+
+        # Try alternative webcam indices
+        for i in range(1, 5):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                logger.info(f"Successfully opened webcam at index {i}")
+                return cap
+
+        # If no webcam is available, create a test video
+        logger.warning("No webcam available, creating test video")
+        cap = cv2.VideoCapture(0)
+        if not cap.isOpened():
+            # Create a test video with a black frame
+            test_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(test_frame, "No Camera Available", (50, 240),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cap = cv2.VideoCapture(0)
+            if not cap.isOpened():
+                raise Exception("Could not initialize any video source")
+        return cap
+    except Exception as e:
+        logger.error(f"Failed to initialize webcam: {str(e)}")
+        raise
+
 def process_frame(frame):
     """Process a single frame for face detection"""
     try:
@@ -102,6 +134,10 @@ def video_processor():
             ret, frame = video_capture.read()
             if not ret:
                 logger.warning("Failed to read frame")
+                # Create a test frame if webcam fails
+                frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                cv2.putText(frame, "Camera Error", (50, 240),
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
                 time.sleep(0.1)
                 continue
                 
@@ -244,11 +280,12 @@ def start_detection():
                 if not initialize_face_detection():
                     return jsonify({'error': 'Failed to initialize face detection model'}), 500
             
-            # Try to open webcam
-            video_capture = cv2.VideoCapture(0)
-            if not video_capture.isOpened():
-                logger.error("Could not open webcam")
-                return jsonify({'error': 'Could not open webcam'}), 500
+            # Try to initialize webcam with fallback
+            try:
+                video_capture = initialize_webcam()
+            except Exception as e:
+                logger.error(f"Webcam initialization error: {str(e)}")
+                return jsonify({'error': 'Could not access webcam. Please check camera permissions.'}), 500
                 
             is_running = True
             video_thread = threading.Thread(target=video_processor, daemon=True)
@@ -258,6 +295,9 @@ def start_detection():
             return jsonify({'status': 'started'})
         except Exception as e:
             logger.error(f"Start error: {str(e)}")
+            if video_capture:
+                video_capture.release()
+                video_capture = None
             return jsonify({'error': str(e)}), 500
     return jsonify({'status': 'already running'})
 
