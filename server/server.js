@@ -13,7 +13,8 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 
 const app = express();
-const port = process.env.PORT || 10000;
+const port = process.env.PORT || 10000;  // Node.js server port
+const pythonPort = 5000;  // Python server port
 
 // Get absolute paths
 const rootDir = path.resolve(__dirname, '..');
@@ -21,6 +22,8 @@ const clientDir = path.join(rootDir, 'client');
 
 console.log('Root directory:', rootDir);
 console.log('Client directory:', clientDir);
+console.log('Node.js server port:', port);
+console.log('Python server port:', pythonPort);
 
 // Middleware
 app.use(cors());
@@ -66,7 +69,6 @@ app.get('/', (req, res) => {
 
 // Proxy /detection/feed as a raw stream (for the live video feed)
 app.get('/detection/feed', (req, res) => {
-  const pythonPort = process.env.PYTHON_PORT || 5000;
   console.log(`Proxying to Python server on port ${pythonPort}`);
   
   const proxyReq = http.request(
@@ -90,7 +92,6 @@ app.get('/detection/feed', (req, res) => {
 });
 
 // Proxy all other /detection/* requests to Flask
-const pythonPort = process.env.PYTHON_PORT || 5000;
 console.log(`Setting up proxy to Python server on port ${pythonPort}`);
 app.use('/detection', createProxyMiddleware({
   target: `http://localhost:${pythonPort}`,
@@ -104,8 +105,10 @@ app.get('*', (req, res) => {
   res.status(404).send('Page not found. Please use the root URL.');
 });
 
-// Start Python server
-const pythonProcess = spawn('python', ['server/app.py']);
+// Start Python server with explicit port
+const pythonProcess = spawn('python', ['server/app.py'], {
+  env: { ...process.env, PORT: pythonPort }
+});
 
 pythonProcess.stdout.on('data', (data) => {
   console.log(`Python output: ${data}`);

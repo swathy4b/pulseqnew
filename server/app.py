@@ -335,9 +335,9 @@ if __name__ == '__main__':
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     print("Starting server in production mode (no debug, no watchdog)")
     
-    # Get port from environment variable or use default
+    # Get port from environment variable
     port = int(os.environ.get('PORT', 5000))
-    print(f"Starting server on port {port}")
+    print(f"Starting Python server on port {port}")
     
     try:
         socketio.run(app, debug=False, host='0.0.0.0', port=port)
