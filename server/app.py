@@ -385,6 +385,9 @@ if __name__ == '__main__':
         # Try to start server
         try:
             print(f"Starting Flask server on port {port}...")
+            # Use eventlet for production
+            import eventlet
+            eventlet.monkey_patch()
             socketio.run(app, debug=False, host='0.0.0.0', port=port)
         except OSError as e:
             if e.errno == 98:  # Address already in use
