@@ -382,12 +382,15 @@ if __name__ == '__main__':
     
     try:
         # Initialize face detection before starting server
+        print("Initializing face detection model...")
         if not initialize_face_detection():
             print("Failed to initialize face detection model")
             sys.exit(1)
+        print("Face detection model initialized successfully")
             
         # Try to start server
         try:
+            print(f"Starting Flask server on port {port}...")
             socketio.run(app, debug=False, host='0.0.0.0', port=port)
         except OSError as e:
             if e.errno == 98:  # Address already in use

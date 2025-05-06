@@ -128,7 +128,7 @@ pythonProcess.on('close', (code) => {
 // Wait for Python server to start
 const waitForPythonServer = () => {
   return new Promise((resolve, reject) => {
-    const maxAttempts = 10;
+    const maxAttempts = 30;  // Increased attempts
     let attempts = 0;
     
     const checkServer = () => {
@@ -147,7 +147,8 @@ const waitForPythonServer = () => {
         if (attempts >= maxAttempts) {
           reject(new Error('Failed to connect to Python server after multiple attempts'));
         } else {
-          setTimeout(checkServer, 1000);
+          console.log(`Waiting for Python server... Attempt ${attempts}/${maxAttempts}`);
+          setTimeout(checkServer, 2000);  // Increased delay
         }
       });
     };
