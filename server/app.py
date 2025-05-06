@@ -104,11 +104,11 @@ def video_processor():
                 logger.warning("Failed to read frame")
                 time.sleep(0.1)
                 continue
-
+                
             processed_frame, count = process_frame(frame)
             crowd_count = count
             last_frame = processed_frame
-
+            
             try:
                 _, buffer = cv2.imencode('.jpg', processed_frame)
                 frame_base64 = base64.b64encode(buffer).decode('utf-8')
@@ -233,7 +233,7 @@ def video_feed():
 @app.route('/start', methods=['POST'])
 def start_detection():
     """Start video processing"""
-    global is_running, video_capture, video_thread
+    global is_running, video_capture, video_thread, face_detection
     
     logger.debug("Start detection requested")
     
@@ -266,7 +266,6 @@ def stop_detection():
     """Stop video processing"""
     global is_running, video_capture, video_thread, last_frame, crowd_count, face_detection
 
-    logger.debug("Stop endpoint called from frontend")
     logger.debug("Stop detection requested")
 
     if is_running:
