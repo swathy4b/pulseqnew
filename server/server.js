@@ -101,9 +101,11 @@ app.get('*', (req, res) => {
 
 // Start Python server with explicit port
 const pythonProcess = spawn('python', ['server/app.py'], {
-  env: { ...process.env, PORT: pythonPort }
+  env: { ...process.env, PORT: pythonPort },
+  stdio: 'pipe'  // Capture stdout and stderr
 });
 
+// Handle Python server output
 pythonProcess.stdout.on('data', (data) => {
   console.log(`Python output: ${data}`);
 });
@@ -112,32 +114,73 @@ pythonProcess.stderr.on('data', (data) => {
   console.error(`Python error: ${data}`);
 });
 
+pythonProcess.on('error', (err) => {
+  console.error('Failed to start Python server:', err);
+});
+
 pythonProcess.on('close', (code) => {
   console.log(`Python process exited with code ${code}`);
+  if (code !== 0) {
+    console.error('Python server failed to start properly');
+  }
 });
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue')
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => {
-  console.error('MongoDB connection error details:', err);
-  console.log('MongoDB URI (partial for security):', 
-    process.env.MONGODB_URI ? 
-    process.env.MONGODB_URI.substring(0, 20) + '...' : 
-    'Not set - using local fallback');
-});
+// Wait for Python server to start
+const waitForPythonServer = () => {
+  return new Promise((resolve, reject) => {
+    const maxAttempts = 10;
+    let attempts = 0;
+    
+    const checkServer = () => {
+      const http = require('http');
+      const req = http.get(`http://localhost:${pythonPort}/status`, (res) => {
+        if (res.statusCode === 200) {
+          console.log('Python server is ready');
+          resolve();
+        } else {
+          reject(new Error(`Python server returned status code ${res.statusCode}`));
+        }
+      });
+      
+      req.on('error', (err) => {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          reject(new Error('Failed to connect to Python server after multiple attempts'));
+        } else {
+          setTimeout(checkServer, 1000);
+        }
+      });
+    };
+    
+    checkServer();
+  });
+};
 
-// Socket.IO
-http.listen(port, '0.0.0.0', () => {
-  console.log(`Node.js server running on port ${port}`);
-  console.log('Available routes:');
-  console.log('- /');
-  console.log('- /register');
-  console.log('- /confirmation');
-  console.log('- /api/queue');
-  console.log('- /api/queue/qr');
-  console.log('- /detection/*');
-});
+// Start Node.js server after Python server is ready
+waitForPythonServer()
+  .then(() => {
+    // MongoDB Connection
+    return mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue');
+  })
+  .then(() => {
+    console.log('Connected to MongoDB');
+    
+    // Start Node.js server
+    http.listen(port, '0.0.0.0', () => {
+      console.log(`Node.js server running on port ${port}`);
+      console.log('Available routes:');
+      console.log('- /');
+      console.log('- /register');
+      console.log('- /confirmation');
+      console.log('- /api/queue');
+      console.log('- /api/queue/qr');
+      console.log('- /detection/*');
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to start servers:', err);
+    process.exit(1);
+  });
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);

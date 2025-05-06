@@ -13,6 +13,7 @@ import os
 import logging
 import socket
 import eventlet
+import sys
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -380,10 +381,25 @@ if __name__ == '__main__':
     print(f"Starting Python server on port {port}")
     
     try:
-        socketio.run(app, debug=False, host='0.0.0.0', port=port)
-    except OSError as e:
-        if e.errno == 98:  # Address already in use
-            print(f"Port {port} is in use, trying port {port + 1}")
-            socketio.run(app, debug=False, host='0.0.0.0', port=port + 1)
-        else:
-            raise e
+        # Initialize face detection before starting server
+        if not initialize_face_detection():
+            print("Failed to initialize face detection model")
+            sys.exit(1)
+            
+        # Try to start server
+        try:
+            socketio.run(app, debug=False, host='0.0.0.0', port=port)
+        except OSError as e:
+            if e.errno == 98:  # Address already in use
+                print(f"Port {port} is in use, trying port {port + 1}")
+                try:
+                    socketio.run(app, debug=False, host='0.0.0.0', port=port + 1)
+                except Exception as e:
+                    print(f"Failed to start server on port {port + 1}: {str(e)}")
+                    sys.exit(1)
+            else:
+                print(f"Failed to start server: {str(e)}")
+                sys.exit(1)
+    except Exception as e:
+        print(f"Server startup error: {str(e)}")
+        sys.exit(1)
