@@ -12,9 +12,13 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
+const httpProxy = require('http-proxy');
 
 const port = process.env.PORT || 10000;  // Node.js server port
 const pythonPort = 5000;  // Python server port
+
+// Create proxy server
+const proxy = httpProxy.createProxyServer({});
 
 // Get absolute paths
 const rootDir = path.resolve(__dirname, '..');
@@ -72,24 +76,13 @@ app.get('/', (req, res) => {
 app.get('/detection/feed', (req, res) => {
   console.log(`Proxying to Python server on port ${pythonPort}`);
   
-  const proxyReq = http.request(
-    {
-      hostname: 'localhost',
-      port: pythonPort,
-      path: '/feed',
-      method: 'GET',
-      headers: req.headers,
-    },
-    proxyRes => {
-      res.writeHead(proxyRes.statusCode, proxyRes.headers);
-      proxyRes.pipe(res);
-    }
-  );
-  proxyReq.on('error', err => {
+  proxy.web(req, res, {
+    target: `http://localhost:${pythonPort}/feed`,
+    ws: true
+  }, (err) => {
     console.error('Proxy error:', err);
     res.status(500).send('Proxy error');
   });
-  proxyReq.end();
 });
 
 // Proxy all other /detection/* requests to Flask
