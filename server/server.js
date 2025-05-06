@@ -37,11 +37,20 @@ app.use(bodyParser.json());
 // Serve static files first
 app.use(express.static(clientDir));
 
-// Root route - serve index.html
-app.get('/', (req, res) => {
-  const filePath = path.join(clientDir, 'index.html');
-  console.log('Serving index.html from:', filePath);
-  res.sendFile(filePath);
+// API Routes
+app.use('/api/queue', queueRouter);
+
+// QR Code route
+app.get('/api/queue/qr', async (req, res) => {
+  try {
+    const baseUrl = process.env.BASE_URL || 'https://i-smartqueue.onrender.com';
+    const qrCodeUrl = await QRCode.toDataURL(`${baseUrl}/qr`);
+    console.log('Serving QR Code URL:', qrCodeUrl);
+    res.json({ qrCode: qrCodeUrl });
+  } catch (err) {
+    console.error('QR Code generation error:', err);
+    res.status(500).send('Error generating QR code');
+  }
 });
 
 // Routes for HTML pages
@@ -54,6 +63,13 @@ app.get('/register', (req, res) => {
 app.get('/confirmation', (req, res) => {
   const filePath = path.join(clientDir, 'confirmation.html');
   console.log('Serving confirmation.html from:', filePath);
+  res.sendFile(filePath);
+});
+
+// Root route - serve index.html
+app.get('/', (req, res) => {
+  const filePath = path.join(clientDir, 'index.html');
+  console.log('Serving index.html from:', filePath);
   res.sendFile(filePath);
 });
 
@@ -86,7 +102,7 @@ app.use('/detection', createProxyMiddleware({
 }));
 
 // Catch-all for undefined routes - serve index.html for SPA
-app.get('*', (req, res) => {
+app.get('*', (req, res, next) => {
   // Don't proxy /detection routes
   if (req.path.startsWith('/detection')) {
     return next();
