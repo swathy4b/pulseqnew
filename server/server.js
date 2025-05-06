@@ -104,6 +104,11 @@ app.use('/detection', createProxyMiddleware({
 
 // Catch-all for undefined routes - serve index.html for SPA
 app.get('*', (req, res) => {
+  // Don't proxy /detection routes
+  if (req.path.startsWith('/detection')) {
+    return next();
+  }
+  
   console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
   const filePath = path.join(clientDir, 'index.html');
   res.sendFile(filePath);
