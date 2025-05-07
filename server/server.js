@@ -141,6 +141,25 @@ app.get('/qr', (req, res) => {
   }
 });
 
+// All routes should serve index.html for SPA
+app.get('*', (req, res) => {
+  // Don't handle /detection routes
+  if (req.path.startsWith('/detection')) {
+    return next();
+  }
+  
+  // Always serve index.html
+  const indexPath = path.join(clientDir, 'index.html');
+  console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error(`Error serving index.html for ${req.path}:`, err);
+      // Send empty response if all else fails
+      res.status(200).send('');
+    }
+  });
+});
+
 // Proxy /detection/feed as a raw stream (for the live video feed)
 app.get('/detection/feed', (req, res) => {
   console.log(`Proxying to Python server on port ${pythonPort}`);
@@ -150,8 +169,9 @@ app.get('/detection/feed', (req, res) => {
     ws: true
   }, (err) => {
     console.error('Proxy error:', err);
-    // On proxy error, redirect to main page
-    res.redirect('/');
+    // On proxy error, serve index.html
+    const indexPath = path.join(clientDir, 'index.html');
+    res.sendFile(indexPath);
   });
 });
 
@@ -163,44 +183,11 @@ app.use('/detection', createProxyMiddleware({
   pathRewrite: { '^/detection': '' },
   onError: (err, req, res) => {
     console.error('Proxy error:', err);
-    res.redirect('/');
+    // On proxy error, serve index.html
+    const indexPath = path.join(clientDir, 'index.html');
+    res.sendFile(indexPath);
   }
 }));
-
-// Catch-all for undefined routes - serve index.html for SPA
-app.get('*', (req, res) => {
-  try {
-    // Don't proxy /detection routes
-    if (req.path.startsWith('/detection')) {
-      return res.redirect('/');
-    }
-    
-    // Check if the file exists
-    const filePath = path.join(clientDir, req.path);
-    if (fs.existsSync(filePath)) {
-      console.log(`Serving file: ${filePath}`);
-      res.sendFile(filePath, (err) => {
-        if (err) {
-          console.error(`Error serving file ${filePath}:`, err);
-          res.redirect('/');
-        }
-      });
-    } else {
-      // If file doesn't exist, serve index.html for SPA
-      console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
-      const indexPath = path.join(clientDir, 'index.html');
-      res.sendFile(indexPath, (err) => {
-        if (err) {
-          console.error(`Error serving index.html for ${req.path}:`, err);
-          res.status(200).send(''); // Send empty response if all else fails
-        }
-      });
-    }
-  } catch (err) {
-    console.error('Error in catch-all route:', err);
-    res.redirect('/');
-  }
-});
 
 // Start Python server with explicit port
 const pythonProcess = spawn('python', ['server/app.py'], {
