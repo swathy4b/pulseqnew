@@ -13,6 +13,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const httpProxy = require('http-proxy');
+const fs = require('fs');
 
 // Use different ports for Node.js and Python servers
 const port = process.env.PORT || 10000;  // Node.js server port
@@ -108,14 +109,22 @@ app.get('*', (req, res) => {
     return res.status(404).send('Not Found');
   }
   
-  console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
-  const filePath = path.join(clientDir, 'index.html');
-  res.sendFile(filePath, (err) => {
-    if (err) {
-      console.error(`Error serving index.html for ${req.path}:`, err);
-      res.status(500).send('Error serving page');
-    }
-  });
+  // Check if the file exists
+  const filePath = path.join(clientDir, req.path);
+  if (fs.existsSync(filePath)) {
+    console.log(`Serving file: ${filePath}`);
+    res.sendFile(filePath);
+  } else {
+    // If file doesn't exist, serve index.html for SPA
+    console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
+    const indexPath = path.join(clientDir, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error(`Error serving index.html for ${req.path}:`, err);
+        res.status(500).send('Error serving page');
+      }
+    });
+  }
 });
 
 // Start Python server with explicit port
