@@ -141,6 +141,35 @@ app.get('/qr', (req, res) => {
   }
 });
 
+// Set your Python Render service URL here
+const pythonServiceUrl = 'https://your-python-service.onrender.com';
+
+// Proxy /detection/feed as a raw stream (for the live video feed)
+app.get('/detection/feed', (req, res) => {
+  console.log(`Proxying to Python Render service at ${pythonServiceUrl}/feed`);
+  proxy.web(req, res, {
+    target: `${pythonServiceUrl}/feed`,
+    ws: true
+  }, (err) => {
+    console.error('Proxy error:', err);
+    const indexPath = path.join(clientDir, 'index.html');
+    res.sendFile(indexPath);
+  });
+});
+
+// Proxy all other /detection/* requests to Python Render service
+console.log(`Setting up proxy to Python Render service at ${pythonServiceUrl}`);
+app.use('/detection', createProxyMiddleware({
+  target: pythonServiceUrl,
+  changeOrigin: true,
+  pathRewrite: { '^/detection': '' },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    const indexPath = path.join(clientDir, 'index.html');
+    res.sendFile(indexPath);
+  }
+}));
+
 // All routes should serve index.html for SPA
 app.get('*', (req, res) => {
   // Don't handle /detection routes
@@ -160,118 +189,17 @@ app.get('*', (req, res) => {
   });
 });
 
-// Proxy /detection/feed as a raw stream (for the live video feed)
-app.get('/detection/feed', (req, res) => {
-  console.log(`Proxying to Python server on port ${pythonPort}`);
-  
-  proxy.web(req, res, {
-    target: `http://localhost:${pythonPort}/feed`,
-    ws: true
-  }, (err) => {
-    console.error('Proxy error:', err);
-    // On proxy error, serve index.html
-    const indexPath = path.join(clientDir, 'index.html');
-    res.sendFile(indexPath);
-  });
-});
-
-// Proxy all other /detection/* requests to Flask
-console.log(`Setting up proxy to Python server on port ${pythonPort}`);
-app.use('/detection', createProxyMiddleware({
-  target: `http://localhost:${pythonPort}`,
-  changeOrigin: true,
-  pathRewrite: { '^/detection': '' },
-  onError: (err, req, res) => {
-    console.error('Proxy error:', err);
-    // On proxy error, serve index.html
-    const indexPath = path.join(clientDir, 'index.html');
-    res.sendFile(indexPath);
-  }
-}));
-
-// Start Python server with explicit port
-const pythonProcess = spawn('python', ['server/app.py'], {
-  env: { ...process.env, PORT: pythonPort },
-  stdio: 'pipe'  // Capture stdout and stderr
-});
-
-// Handle Python server output
-pythonProcess.stdout.on('data', (data) => {
-  console.log(`Python output: ${data}`);
-});
-
-pythonProcess.stderr.on('data', (data) => {
-  console.error(`Python error: ${data}`);
-});
-
-pythonProcess.on('error', (err) => {
-  console.error('Failed to start Python server:', err);
-});
-
-pythonProcess.on('close', (code) => {
-  console.log(`Python process exited with code ${code}`);
-  if (code !== 0) {
-    console.error('Python server failed to start properly');
-  }
-});
-
-// Wait for Python server to start
-const waitForPythonServer = () => {
-  return new Promise((resolve, reject) => {
-    const maxAttempts = 30;  // Increased attempts
-    let attempts = 0;
-    
-    const checkServer = () => {
-      const http = require('http');
-      const req = http.get(`http://localhost:${pythonPort}/status`, (res) => {
-        if (res.statusCode === 200) {
-          console.log('Python server is ready');
-          resolve();
-        } else {
-          reject(new Error(`Python server returned status code ${res.statusCode}`));
-        }
-      });
-      
-      req.on('error', (err) => {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          reject(new Error('Failed to connect to Python server after multiple attempts'));
-        } else {
-          console.log(`Waiting for Python server... Attempt ${attempts}/${maxAttempts}`);
-          setTimeout(checkServer, 2000);  // Increased delay
-        }
-      });
-    };
-    
-    checkServer();
-  });
-};
-
 // Start Node.js server after Python server is ready
-waitForPythonServer()
-  .then(() => {
-    // MongoDB Connection
-    return mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ismartqueue');
-  })
-  .then(() => {
-    console.log('Connected to MongoDB');
-    
-    // Start Node.js server
-    http.listen(port, '0.0.0.0', () => {
-      console.log(`Node.js server running on port ${port}`);
-      console.log('Available routes:');
-      console.log('- /');
-      console.log('- /register');
-      console.log('- /confirmation');
-      console.log('- /api/queue');
-      console.log('- /api/queue/qr');
-      console.log('- /detection/*');
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to start servers:', err);
-    process.exit(1);
-  });
+http.listen(port, '0.0.0.0', () => {
+  console.log(`Node.js server running on port ${port}`);
+  console.log('Available routes:');
+  console.log('- /');
+  console.log('- /register');
+  console.log('- /confirmation');
+  console.log('- /api/queue');
+  console.log('- /api/queue/qr');
+  console.log('- /detection/*');
+});
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
