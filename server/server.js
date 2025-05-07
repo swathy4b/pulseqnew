@@ -35,8 +35,27 @@ console.log('Python server port:', pythonPort);
 app.use(cors());
 app.use(bodyParser.json());
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  // Always serve index.html on any error
+  const indexPath = path.join(clientDir, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('Error serving index.html:', err);
+      res.status(200).send(''); // Send empty response if all else fails
+    }
+  });
+});
+
 // Serve static files first
-app.use(express.static(clientDir));
+app.use(express.static(clientDir, {
+  fallthrough: true, // Continue to next middleware if file not found
+  setHeaders: (res, path) => {
+    // Set cache headers for static files
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+  }
+}));
 
 // API Routes
 app.use('/api/queue', queueRouter);
@@ -50,35 +69,76 @@ app.get('/api/queue/qr', async (req, res) => {
     res.json({ qrCode: qrCodeUrl });
   } catch (err) {
     console.error('QR Code generation error:', err);
-    res.status(500).send('Error generating QR code');
+    // On error, return a default QR code
+    res.json({ qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' });
   }
 });
 
 // Routes for HTML pages
 app.get('/register', (req, res) => {
-  const filePath = path.join(clientDir, 'register.html');
-  console.log('Serving register.html from:', filePath);
-  res.sendFile(filePath);
+  try {
+    const filePath = path.join(clientDir, 'register.html');
+    console.log('Serving register.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving register.html:', err);
+        res.redirect('/');
+      }
+    });
+  } catch (err) {
+    console.error('Error in /register route:', err);
+    res.redirect('/');
+  }
 });
 
 app.get('/confirmation', (req, res) => {
-  const filePath = path.join(clientDir, 'confirmation.html');
-  console.log('Serving confirmation.html from:', filePath);
-  res.sendFile(filePath);
+  try {
+    const filePath = path.join(clientDir, 'confirmation.html');
+    console.log('Serving confirmation.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving confirmation.html:', err);
+        res.redirect('/');
+      }
+    });
+  } catch (err) {
+    console.error('Error in /confirmation route:', err);
+    res.redirect('/');
+  }
 });
 
 // Root route - serve index.html
 app.get('/', (req, res) => {
-  const filePath = path.join(clientDir, 'index.html');
-  console.log('Serving index.html from:', filePath);
-  res.sendFile(filePath);
+  try {
+    const filePath = path.join(clientDir, 'index.html');
+    console.log('Serving index.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(200).send(''); // Send empty response if all else fails
+      }
+    });
+  } catch (err) {
+    console.error('Error in root route:', err);
+    res.status(200).send(''); // Send empty response if all else fails
+  }
 });
 
 // Serve the main QR code page
 app.get('/qr', (req, res) => {
-  const filePath = path.join(clientDir, 'index.html');
-  console.log('Serving QR code page from:', filePath);
-  res.sendFile(filePath);
+  try {
+    const filePath = path.join(clientDir, 'index.html');
+    console.log('Serving QR code page from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving QR code page:', err);
+        res.redirect('/');
+      }
+    });
+  } catch (err) {
+    console.error('Error in /qr route:', err);
+    res.redirect('/');
+  }
 });
 
 // Proxy /detection/feed as a raw stream (for the live video feed)
@@ -90,7 +150,8 @@ app.get('/detection/feed', (req, res) => {
     ws: true
   }, (err) => {
     console.error('Proxy error:', err);
-    res.status(500).send('Proxy error');
+    // On proxy error, redirect to main page
+    res.redirect('/');
   });
 });
 
@@ -99,31 +160,45 @@ console.log(`Setting up proxy to Python server on port ${pythonPort}`);
 app.use('/detection', createProxyMiddleware({
   target: `http://localhost:${pythonPort}`,
   changeOrigin: true,
-  pathRewrite: { '^/detection': '' }
+  pathRewrite: { '^/detection': '' },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.redirect('/');
+  }
 }));
 
 // Catch-all for undefined routes - serve index.html for SPA
 app.get('*', (req, res) => {
-  // Don't proxy /detection routes
-  if (req.path.startsWith('/detection')) {
-    return res.status(404).send('Not Found');
-  }
-  
-  // Check if the file exists
-  const filePath = path.join(clientDir, req.path);
-  if (fs.existsSync(filePath)) {
-    console.log(`Serving file: ${filePath}`);
-    res.sendFile(filePath);
-  } else {
-    // If file doesn't exist, serve index.html for SPA
-    console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
-    const indexPath = path.join(clientDir, 'index.html');
-    res.sendFile(indexPath, (err) => {
-      if (err) {
-        console.error(`Error serving index.html for ${req.path}:`, err);
-        res.status(500).send('Error serving page');
-      }
-    });
+  try {
+    // Don't proxy /detection routes
+    if (req.path.startsWith('/detection')) {
+      return res.redirect('/');
+    }
+    
+    // Check if the file exists
+    const filePath = path.join(clientDir, req.path);
+    if (fs.existsSync(filePath)) {
+      console.log(`Serving file: ${filePath}`);
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error(`Error serving file ${filePath}:`, err);
+          res.redirect('/');
+        }
+      });
+    } else {
+      // If file doesn't exist, serve index.html for SPA
+      console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
+      const indexPath = path.join(clientDir, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error(`Error serving index.html for ${req.path}:`, err);
+          res.status(200).send(''); // Send empty response if all else fails
+        }
+      });
+    }
+  } catch (err) {
+    console.error('Error in catch-all route:', err);
+    res.redirect('/');
   }
 });
 
