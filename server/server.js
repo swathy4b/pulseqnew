@@ -142,7 +142,7 @@ app.get('/qr', (req, res) => {
 });
 
 // Set your Python Render service URL here
-const pythonServiceUrl = 'https://your-python-service.onrender.com';
+const pythonServiceUrl = 'https://peopledetection-sk8w.onrender.com';
 
 // Proxy /detection/feed as a raw stream (for the live video feed)
 app.get('/detection/feed', (req, res) => {
