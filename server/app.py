@@ -258,8 +258,12 @@ def generate_frames():
 @app.route('/feed')
 def video_feed():
     """Serve the video feed"""
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    try:
+        return Response(generate_frames(),
+                        mimetype='multipart/x-mixed-replace; boundary=frame')
+    except Exception as e:
+        logger.error(f"Error serving video feed: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/start', methods=['POST'])
 def start_detection():
