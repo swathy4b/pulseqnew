@@ -16,8 +16,9 @@ const httpProxy = require('http-proxy');
 const fs = require('fs');
 const os = require('os');
 
-// Use Render's PORT or fallback to 10000
-const port = process.env.PORT || 10000;
+// Use different ports for Node.js and Python servers
+const port = process.env.PORT || 10000;  // Node.js server port
+const pythonPort = 5000;  // Python server port
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smartqueue';
@@ -66,7 +67,8 @@ function startPythonServer() {
             stdio: 'pipe',
             env: {
                 ...process.env,
-                PYTHONUNBUFFERED: '1'
+                PYTHONUNBUFFERED: '1',
+                PORT: pythonPort  // Set Python server port
             }
         });
 
@@ -74,7 +76,7 @@ function startPythonServer() {
 
         pythonProcess.stdout.on('data', (data) => {
             console.log(`Python server output: ${data}`);
-            if (data.toString().includes('Starting Python server on port 5000')) {
+            if (data.toString().includes(`Starting Python server on port ${pythonPort}`)) {
                 isReady = true;
                 resolve();
             }
@@ -129,20 +131,20 @@ app.set('io', io);
 
 // Proxy for MJPEG stream (must be before any static/catch-all routes)
 app.use('/detection/feed', createProxyMiddleware({
-  target: 'http://localhost:5000',
-  changeOrigin: true,
-  ws: true,
-  logLevel: 'debug'
+    target: `http://localhost:${pythonPort}`,
+    changeOrigin: true,
+    ws: true,
+    logLevel: 'debug'
 }));
 
 // Proxy for all other detection routes
 app.use('/detection', createProxyMiddleware({
-  target: 'http://localhost:5000',
-  changeOrigin: true,
-  pathRewrite: { '^/detection': '' },
-  onError: (err, req, res) => {
-    res.status(500).send('Proxy error');
-  }
+    target: `http://localhost:${pythonPort}`,
+    changeOrigin: true,
+    pathRewrite: { '^/detection': '' },
+    onError: (err, req, res) => {
+        res.status(500).send('Proxy error');
+    }
 }));
 
 // Error handling middleware
@@ -315,9 +317,9 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start server
+// Start Node.js server
 http.listen(port, '0.0.0.0', () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Node.js server running on port ${port}`);
     console.log('Available routes:');
     console.log('- /');
     console.log('- /register');
