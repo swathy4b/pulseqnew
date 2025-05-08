@@ -5,216 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Queue Confirmation - PulseQ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #a5b4fc;
-            --secondary: #d946ef;
-            --secondary-dark: #c026d3;
-            --background: #f9fafb;
-            --card-bg: #ffffff;
-            --text-primary: #1f2937;
-            --text-secondary: #4b5563;
-            --text-light: #9ca3af;
-            --success: #10b981;
-            --border-radius: 16px;
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .container {
-            background-color: var(--card-bg);
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 450px;
-            padding: 35px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
-        }
-
-        h1 {
-            color: var(--primary-dark);
-            margin-bottom: 8px;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 25px;
-        }
-
-        .status-icon {
-            font-size: 70px;
-            color: var(--success);
-            margin: 10px 0 25px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .queue-info {
-            background: linear-gradient(145deg, #f3f4f6, #e5e7eb);
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin: 25px 0;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .queue-info::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, rgba(0, 0, 0, 0) 70%);
-            border-radius: 50%;
-        }
-
-        .queue-number {
-            font-size: 56px;
-            font-weight: 800;
-            color: var(--primary);
-            margin: 10px 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .position-info {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--text-primary);
-        }
-
-        .wait-time {
-            font-size: 16px;
-            color: var(--text-secondary);
-        }
-
-        .user-details {
-            background-color: var(--background);
-            border-radius: var(--border-radius);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            padding: 12px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .refresh-button {
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 14px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 10px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .refresh-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
-        }
-
-        .refresh-button:active {
-            transform: translateY(1px);
-        }
-
-        .refresh-icon {
-            transition: transform 0.5s ease;
-        }
-
-        .refresh-button:hover .refresh-icon {
-            transform: rotate(180deg);
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 25px 20px;
-            }
-            
-            h1 {
-                font-size: 1.75rem;
-            }
-            
-            .queue-number {
-                font-size: 48px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <div class="pulseq-logo">PulseQ</div>
-    <div class="floating-shape shape-1"></div>
-    <div class="floating-shape shape-2"></div>
-    
     <div class="container">
         <div class="header">
             <div class="logo"><i class="fas fa-people-arrows"></i></div>
             <h1>PulseQ</h1>
             <p class="subtitle">Your queue confirmation</p>
         </div>
+
         <div class="status-icon">
             <i class="fas fa-check-circle"></i>
         </div>
@@ -223,6 +23,13 @@
             <div class="queue-number" id="queueNumber">--</div>
             <p class="position-info" id="positionInfo">Loading position information...</p>
             <p class="wait-time" id="waitTime">Estimated wait time: calculating...</p>
+        </div>
+
+        <div class="queue-status">
+            <div class="queue-timer" id="queueTimer">00:00:00</div>
+            <div class="queue-progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
         </div>
 
         <div class="user-details">
@@ -245,41 +52,61 @@
         </button>
     </div>
 
-    <div class="footer">
-        <p>Thanks for using PulseQ</p>
+    <div class="queue-notification" id="queueNotification">
+        <div class="notification-content">
+            <i class="fas fa-bell notification-icon"></i>
+            <div class="notification-text">It's your turn!</div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get queue ID from URL parameter
             const urlParams = new URLSearchParams(window.location.search);
             const queueId = urlParams.get('id');
+            let startTime = new Date();
+            let timerInterval;
             
             if (!queueId) {
                 alert('Invalid queue entry. Please rejoin the queue.');
                 window.location.href = '/';
                 return;
             }
-            
-            const refreshButton = document.getElementById('refreshStatus');
-            refreshButton.addEventListener('click', function() {
-                const icon = this.querySelector('.refresh-icon');
-                icon.style.transition = 'transform 1s ease';
-                icon.style.transform = 'rotate(360deg)';
-                setTimeout(() => {
-                    icon.style.transition = 'none';
-                    icon.style.transform = 'rotate(0deg)';
-                }, 1000);
+
+            function startTimer() {
+                startTime = new Date();
+                timerInterval = setInterval(updateTimer, 1000);
+            }
+
+            function updateTimer() {
+                const now = new Date();
+                const diff = now - startTime;
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
                 
-                fetchQueueStatus();
-            });
-            
-            // Initial fetch
-            fetchQueueStatus();
-            
-            // Set up auto-refresh every 30 seconds
-            const refreshInterval = setInterval(fetchQueueStatus, 30000);
-            
+                document.getElementById('queueTimer').textContent = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            function showNotification(message) {
+                const notification = document.getElementById('queueNotification');
+                notification.querySelector('.notification-text').textContent = message;
+                notification.classList.add('show');
+                
+                // Play notification sound
+                const audio = new Audio('/static/notification.mp3');
+                audio.play();
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 5000);
+            }
+
+            function updateProgressBar(position, total) {
+                const progress = ((total - position) / total) * 100;
+                document.getElementById('progressBar').style.width = `${progress}%`;
+            }
+
             async function fetchQueueStatus() {
                 try {
                     const response = await fetch(`/api/queue/status/${queueId}`);
@@ -291,22 +118,31 @@
                     const data = await response.json();
                     updateUI(data);
                     
-                    // If completed, stop auto-refresh
+                    // If it's our turn, show notification
+                    if (data.status === 'processing' && !data.notified) {
+                        showNotification("It's your turn! Please proceed to the counter.");
+                        data.notified = true;
+                    }
+                    
+                    // Update progress bar
+                    updateProgressBar(data.position, data.totalInQueue);
+                    
+                    // If completed, stop timer and auto-refresh
                     if (data.status === 'completed') {
+                        clearInterval(timerInterval);
                         clearInterval(refreshInterval);
                     }
                 } catch (error) {
                     console.error('Error fetching queue status:', error);
                 }
             }
-            
+
             function updateUI(data) {
                 document.getElementById('queueNumber').textContent = data.queueNumber || '--';
                 document.getElementById('userName').textContent = data.name || '--';
                 document.getElementById('userPhone').textContent = data.phone || '--';
                 document.getElementById('joinTime').textContent = formatTime(new Date(data.joinTime));
                 
-                // Update position info
                 if (data.status === 'processing') {
                     document.getElementById('positionInfo').textContent = "You're being served now!";
                     document.getElementById('waitTime').textContent = "It's your turn!";
@@ -322,29 +158,31 @@
                     document.getElementById('waitTime').textContent = `Estimated wait time: ${data.estimatedWaitMinutes} minutes`;
                 }
             }
-            
+
             function formatTime(date) {
                 return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
+
+            const refreshButton = document.getElementById('refreshStatus');
+            refreshButton.addEventListener('click', function() {
+                const icon = this.querySelector('.refresh-icon');
+                icon.style.transition = 'transform 1s ease';
+                icon.style.transform = 'rotate(360deg)';
+                setTimeout(() => {
+                    icon.style.transition = 'none';
+                    icon.style.transform = 'rotate(0deg)';
+                }, 1000);
+                
+                fetchQueueStatus();
+            });
+
+            // Start timer and initial fetch
+            startTimer();
+            fetchQueueStatus();
+            
+            // Set up auto-refresh every 10 seconds
+            const refreshInterval = setInterval(fetchQueueStatus, 10000);
         });
     </script>
-
-    <!-- Confirmation Success Card -->
-    <div class="confirmation-card">
-        <div class="confirmation-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <h2>Successfully Joined the Queue!</h2>
-        <div class="queue-position">
-            <span class="position-number">3</span>
-            <div class="position-label">You are number <b>3</b> in the queue</div>
-        </div>
-        <div class="customer-summary">
-            <div><b>Name:</b> John Doe</div>
-            <div><b>Phone:</b> +91-9876543210</div>
-        </div>
-        <div class="confirmation-message">Please wait for your turn. You will be notified when you are about to be served.</div>
-        <a href="index.html" class="back-btn">Back to Home</a>
-    </div>
 </body>
-</html>
+</html> 
