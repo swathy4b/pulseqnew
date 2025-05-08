@@ -5,54 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Queue Confirmation - PulseQ</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="confimation.css">
+    <!-- Make sure this path matches your deployment -->
+    <link rel="stylesheet" href="confirmation.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="ticket-card">
+        <div class="ticket-header">
             <div class="logo"><i class="fas fa-people-arrows"></i></div>
             <h1>PulseQ</h1>
             <p class="subtitle">Your queue confirmation</p>
         </div>
-
-        <div class="status-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-
-        <div class="queue-info">
-            <div class="queue-number" id="queueNumber">--</div>
-            <p class="position-info" id="positionInfo">Loading position information...</p>
-            <p class="wait-time" id="waitTime">Estimated wait time: calculating...</p>
-        </div>
-
-        <div class="queue-status">
+        <div class="ticket-body">
+            <div class="status-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="queue-number-big" id="queueNumber">--</div>
+            <div class="ticket-row">
+                <span class="ticket-label">Name:</span>
+                <span class="ticket-value" id="userName">--</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Phone:</span>
+                <span class="ticket-value" id="userPhone">--</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Joined At:</span>
+                <span class="ticket-value" id="joinTime">--</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Your Position:</span>
+                <span class="ticket-value" id="positionInfo">--</span>
+            </div>
+            <div class="ticket-row">
+                <span class="ticket-label">Wait Time:</span>
+                <span class="ticket-value" id="waitTime">--</span>
+            </div>
             <div class="queue-timer" id="queueTimer">00:00:00</div>
             <div class="queue-progress">
                 <div class="progress-bar" id="progressBar"></div>
             </div>
+            <button class="refresh-button" id="refreshStatus">
+                <i class="fas fa-sync-alt refresh-icon"></i> Refresh Status
+            </button>
         </div>
-
-        <div class="user-details">
-            <div class="info-row">
-                <span class="info-label">Name:</span>
-                <span id="userName">--</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Phone:</span>
-                <span id="userPhone">--</span>
-            </div>
-            <div class="info-row">
-                <span class="info-label">Joined At:</span>
-                <span id="joinTime">--</span>
-            </div>
-        </div>
-
-        <button class="refresh-button" id="refreshStatus">
-            <i class="fas fa-sync-alt refresh-icon"></i> Refresh Status
-        </button>
     </div>
 
-    <div class="queue-notification" id="queueNotification">
+    <div class="queue-notification" id="queueNotification" style="display:none;">
         <div class="notification-content">
             <i class="fas fa-bell notification-icon"></i>
             <div class="notification-text">It's your turn!</div>
@@ -83,7 +81,6 @@
                 const hours = Math.floor(diff / 3600000);
                 const minutes = Math.floor((diff % 3600000) / 60000);
                 const seconds = Math.floor((diff % 60000) / 1000);
-                
                 document.getElementById('queueTimer').textContent = 
                     `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             }
@@ -91,14 +88,11 @@
             function showNotification(message) {
                 const notification = document.getElementById('queueNotification');
                 notification.querySelector('.notification-text').textContent = message;
+                notification.style.display = 'block';
                 notification.classList.add('show');
-                
-                // Play notification sound
-                const audio = new Audio('/static/notification.mp3');
-                audio.play();
-                
                 setTimeout(() => {
                     notification.classList.remove('show');
+                    notification.style.display = 'none';
                 }, 5000);
             }
 
@@ -110,24 +104,14 @@
             async function fetchQueueStatus() {
                 try {
                     const response = await fetch(`/api/queue/status/${queueId}`);
-                    
-                    if (!response.ok) {
-                        throw new Error(`Error: ${response.status}`);
-                    }
-                    
+                    if (!response.ok) throw new Error(`Error: ${response.status}`);
                     const data = await response.json();
                     updateUI(data);
-                    
-                    // If it's our turn, show notification
                     if (data.status === 'processing' && !data.notified) {
                         showNotification("It's your turn! Please proceed to the counter.");
                         data.notified = true;
                     }
-                    
-                    // Update progress bar
                     updateProgressBar(data.position, data.totalInQueue);
-                    
-                    // If completed, stop timer and auto-refresh
                     if (data.status === 'completed') {
                         clearInterval(timerInterval);
                         clearInterval(refreshInterval);
@@ -142,20 +126,17 @@
                 document.getElementById('userName').textContent = data.name || '--';
                 document.getElementById('userPhone').textContent = data.phone || '--';
                 document.getElementById('joinTime').textContent = formatTime(new Date(data.joinTime));
-                
+                document.getElementById('positionInfo').textContent = data.position || '--';
+                document.getElementById('waitTime').textContent = (data.estimatedWaitMinutes ? data.estimatedWaitMinutes + ' min' : '--');
                 if (data.status === 'processing') {
-                    document.getElementById('positionInfo').textContent = "You're being served now!";
-                    document.getElementById('waitTime').textContent = "It's your turn!";
                     document.querySelector('.status-icon i').className = 'fas fa-hourglass-half';
                     document.querySelector('.status-icon').style.color = '#6366f1';
                 } else if (data.status === 'completed') {
-                    document.getElementById('positionInfo').textContent = "You've been served";
-                    document.getElementById('waitTime').textContent = "Thank you for using our service!";
                     document.querySelector('.status-icon i').className = 'fas fa-check-circle';
                     document.querySelector('.status-icon').style.color = '#10b981';
                 } else {
-                    document.getElementById('positionInfo').textContent = `Your position: ${data.position} in line`;
-                    document.getElementById('waitTime').textContent = `Estimated wait time: ${data.estimatedWaitMinutes} minutes`;
+                    document.querySelector('.status-icon i').className = 'fas fa-check-circle';
+                    document.querySelector('.status-icon').style.color = '#10b981';
                 }
             }
 
@@ -163,8 +144,7 @@
                 return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
 
-            const refreshButton = document.getElementById('refreshStatus');
-            refreshButton.addEventListener('click', function() {
+            document.getElementById('refreshStatus').addEventListener('click', function() {
                 const icon = this.querySelector('.refresh-icon');
                 icon.style.transition = 'transform 1s ease';
                 icon.style.transform = 'rotate(360deg)';
@@ -172,17 +152,15 @@
                     icon.style.transition = 'none';
                     icon.style.transform = 'rotate(0deg)';
                 }, 1000);
-                
                 fetchQueueStatus();
             });
 
             // Start timer and initial fetch
             startTimer();
             fetchQueueStatus();
-            
             // Set up auto-refresh every 10 seconds
             const refreshInterval = setInterval(fetchQueueStatus, 10000);
         });
     </script>
 </body>
-</html> 
+</html>
