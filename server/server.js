@@ -14,10 +14,42 @@ const io = require('socket.io')(http);
 const bodyParser = require('body-parser');
 const httpProxy = require('http-proxy');
 const fs = require('fs');
+const os = require('os');
 
-// Use different ports for Node.js and Python servers
-const port = process.env.PORT || 10000;  // Node.js server port
-const pythonPort = 5000;  // Python server port
+// Use Render's PORT or fallback to 10000
+const port = process.env.PORT || 10000;
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smartqueue';
+
+mongoose.connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+})
+.then(() => {
+    console.log('Connected to MongoDB');
+})
+.catch((err) => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+});
+
+// Handle MongoDB connection errors
+mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected. Attempting to reconnect...');
+    mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+    });
+});
 
 // Python process management
 let pythonProcess = null;
@@ -86,12 +118,14 @@ const clientDir = path.join(rootDir, 'client');
 
 console.log('Root directory:', rootDir);
 console.log('Client directory:', clientDir);
-console.log('Node.js server port:', port);
-console.log('Python server port:', pythonPort);
+console.log('Server port:', port);
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Make io instance available to routes
+app.set('io', io);
 
 // Proxy for MJPEG stream (must be before any static/catch-all routes)
 app.use('/detection/feed', createProxyMiddleware({
@@ -136,113 +170,79 @@ app.use(express.static(clientDir, {
 // API Routes
 app.use('/api/queue', queueRouter);
 
+// Get local IP address
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
+
+const IP = getLocalIP();
+
 // QR Code route
 app.get('/api/queue/qr', async (req, res) => {
-  try {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:10000';
-    const qrCodeUrl = await QRCode.toDataURL(`${baseUrl}/register`);
-    console.log('Serving QR Code URL:', qrCodeUrl);
-    res.json({ qrCode: qrCodeUrl });
-  } catch (err) {
-    console.error('QR Code generation error:', err);
-    res.json({ qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=' });
-  }
+    try {
+        // Get the base URL from environment or request
+        let baseUrl;
+        if (process.env.RENDER_EXTERNAL_URL) {
+            baseUrl = process.env.RENDER_EXTERNAL_URL;
+        } else if (req.get('origin')) {
+            baseUrl = req.get('origin');
+        } else {
+            baseUrl = `http://localhost:${port}`;
+        }
+        
+        // Remove trailing slash if present
+        baseUrl = baseUrl.replace(/\/$/, '');
+        
+        const registerUrl = `${baseUrl}/register`;
+        console.log('Generating QR code for URL:', registerUrl);
+        
+        const qrCode = await QRCode.toDataURL(registerUrl);
+        res.json({ qrCode });
+    } catch (error) {
+        console.error('QR generation error:', error);
+        res.status(500).json({ error: 'Failed to generate QR code' });
+    }
 });
 
 // Routes for HTML pages
 app.get('/register', (req, res) => {
-  try {
-    const filePath = path.join(__dirname, 'templates', 'register.html');
-    console.log('Serving register.html from:', filePath);
-    res.sendFile(filePath, (err) => {
-      if (err) {
+    try {
+        const filePath = path.join(clientDir, 'register.html');
+        console.log('Serving register.html from:', filePath);
+        res.sendFile(filePath);
+    } catch (err) {
         console.error('Error serving register.html:', err);
         res.redirect('/');
-      }
-    });
-  } catch (err) {
-    console.error('Error in /register route:', err);
-    res.redirect('/');
-  }
+    }
 });
 
 app.get('/confirmation', (req, res) => {
-  res.sendFile(path.join(__dirname, 'templates', 'confirmation.html'));
+    try {
+        const filePath = path.join(clientDir, 'confirmation.html');
+        console.log('Serving confirmation.html from:', filePath);
+        res.sendFile(filePath);
+    } catch (err) {
+        console.error('Error serving confirmation.html:', err);
+        res.redirect('/');
+    }
 });
 
 // Root route - serve index.html
 app.get('/', (req, res) => {
-  try {
-    const filePath = path.join(clientDir, 'index.html');
-    console.log('Serving index.html from:', filePath);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error serving index.html:', err);
-        res.status(200).send(''); // Send empty response if all else fails
-      }
-    });
-  } catch (err) {
-    console.error('Error in root route:', err);
-    res.status(200).send(''); // Send empty response if all else fails
-  }
-});
-
-// Serve the main QR code page
-app.get('/qr', (req, res) => {
-  try {
-    const filePath = path.join(clientDir, 'index.html');
-    console.log('Serving QR code page from:', filePath);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error serving QR code page:', err);
-        res.redirect('/');
-      }
-    });
-  } catch (err) {
-    console.error('Error in /qr route:', err);
-    res.redirect('/');
-  }
-});
-
-// All routes should serve index.html for SPA
-app.get('*', (req, res) => {
-  // Don't handle /detection routes
-  if (req.path.startsWith('/detection')) {
-    return next();
-  }
-  
-  // Always serve index.html
-  const indexPath = path.join(clientDir, 'index.html');
-  console.log(`Serving index.html for path: ${req.path} from ${req.ip}`);
-  res.sendFile(indexPath, (err) => {
-    if (err) {
-      console.error(`Error serving index.html for ${req.path}:`, err);
-      // Send empty response if all else fails
-      res.status(200).send('');
-    }
-  });
+    res.sendFile(path.join(clientDir, 'index.html'));
 });
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
     console.log('Client connected');
-
-    socket.on('start_monitoring', async () => {
-        try {
-            console.log('Starting monitoring...');
-            await startPythonServer();
-            socket.emit('monitoring_started');
-        } catch (error) {
-            console.error('Failed to start Python server:', error);
-            socket.emit('error', { message: 'Failed to start video detection' });
-        }
-    });
-
-    socket.on('stop_monitoring', () => {
-        console.log('Stopping monitoring...');
-        stopPythonServer();
-        socket.emit('monitoring_stopped');
-    });
 
     socket.on('joinQueue', async (data) => {
         try {
@@ -296,13 +296,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('evacuate_now', () => {
-        // Broadcast evacuation alert to all connected clients
         io.emit('evacuation_alert', {
             message: '🚨 EMERGENCY EVACUATION! Please leave the area immediately!',
             timestamp: new Date().toISOString()
         });
         
-        // Clear the queue after evacuation
         Queue.deleteMany({})
             .then(() => {
                 io.emit('queueUpdate', []);
@@ -317,9 +315,9 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start Node.js server
+// Start server
 http.listen(port, '0.0.0.0', () => {
-    console.log(`Node.js server running on port ${port}`);
+    console.log(`Server running on port ${port}`);
     console.log('Available routes:');
     console.log('- /');
     console.log('- /register');
@@ -327,4 +325,8 @@ http.listen(port, '0.0.0.0', () => {
     console.log('- /api/queue');
     console.log('- /api/queue/qr');
     console.log('- /detection/* (Python server routes)');
+    
+    // Log the URL that will be used for QR codes
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`;
+    console.log(`QR Code will point to: ${baseUrl}/register`);
 });
