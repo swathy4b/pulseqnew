@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import cv2
 import numpy as np
 import time
@@ -12,7 +15,6 @@ from collections import deque
 import os
 import logging
 import socket
-import eventlet
 import sys
 
 # Set up logging
@@ -28,7 +30,7 @@ app = Flask(__name__,
             template_folder=templates_dir,
             static_folder=os.path.join(server_dir, 'static'))
 app.config['SECRET_KEY'] = 'crowd-detection-secret'
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # Global variables
 frame_queue = deque(maxlen=10)
@@ -40,12 +42,17 @@ face_detection = None
 last_frame = None
 video_lock = threading.Lock()
 
+# Initialize MediaPipe Face Detection
+mp_face_detection = mp.solutions.face_detection
+mp_drawing = mp.solutions.drawing_utils
+
+# Get port from environment variable or use default
+port = int(os.getenv('PORT', 5000))
+
 def initialize_face_detection():
     """Initialize MediaPipe Face Detection"""
     global face_detection
     try:
-        mp_face_detection = mp.solutions.face_detection
-        mp_drawing = mp.solutions.drawing_utils
         face_detection = mp_face_detection.FaceDetection(
             model_selection=1,
             min_detection_confidence=0.5
@@ -230,30 +237,87 @@ def update_analytics_history(count, timestamp):
     except Exception as e:
         logger.error(f"Error updating analytics history: {str(e)}")
 
+def get_available_camera():
+    for idx in range(5):
+        cap = cv2.VideoCapture(idx)
+        if cap.isOpened():
+            cap.release()
+            return idx
+        cap.release()
+    return None
+
 def generate_frames():
-    camera = cv2.VideoCapture(0)
-    while True:
-        success, frame = camera.read()
-        if not success:
-            break
-        else:
-            # Convert the BGR image to RGB
-            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Process the frame with MediaPipe
-            results = face_detection.process(rgb_frame)
-            
-            # Draw face detections
+    """Generate video frames with face detection"""
+    global video_capture, face_detection
+    try:
+        video_capture = cv2.VideoCapture(0)
+        if not video_capture.isOpened():
+            logger.error("Failed to open webcam at index 0!")
+            # Create a black test image with a message
+            test_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(test_frame, "No Camera Available", (50, 240),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            ret, buffer = cv2.imencode('.jpg', test_frame)
+            frame = buffer.tobytes()
+            while True:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        while True:
+            success, frame = video_capture.read()
+            if not success:
+                logger.error("Failed to read frame from webcam")
+                # Instead of break, send a red test frame
+                test_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                test_frame[:] = (0, 0, 255)  # Red
+                cv2.putText(test_frame, "CAMERA ERROR", (50, 240),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+                ret, buffer = cv2.imencode('.jpg', test_frame)
+                frame = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+                time.sleep(0.5)
+                continue
+            # Process frame for face detection
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = face_detection.process(frame_rgb)
             if results.detections:
                 for detection in results.detections:
-                    mp_drawing.draw_detection(frame, detection)
-            
-            # Convert the frame to JPEG
-            ret, buffer = cv2.imencode('.jpg', frame)
+                    bboxC = detection.location_data.relative_bounding_box
+                    ih, iw, _ = frame.shape
+                    x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
+                    # Draw bounding box
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    # Draw label
+                    score = int(detection.score[0] * 100)
+                    cv2.putText(frame, f'Person {score}%', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            # Add crowd count
+            count = len(results.detections) if results.detections else 0
+            cv2.putText(frame, f'People: {count}', (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            # Encode frame
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            if not ret:
+                logger.error("Failed to encode frame")
+                continue
             frame = buffer.tobytes()
-            
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.033)  # ~30 FPS
+    except Exception as e:
+        logger.error(f"Error in generate_frames: {str(e)}")
+        # Create error frame
+        error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(error_frame, f"Error: {str(e)}", (50, 240),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        ret, buffer = cv2.imencode('.jpg', error_frame)
+        frame = buffer.tobytes()
+        while True:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 @app.route('/feed')
 def video_feed():
@@ -279,11 +343,9 @@ def start_detection():
                 if not initialize_face_detection():
                     return jsonify({'error': 'Failed to initialize face detection model'}), 500
             
-            # Try to initialize webcam with fallback
-            try:
-                video_capture = initialize_webcam()
-            except Exception as e:
-                logger.error(f"Webcam initialization error: {str(e)}")
+            # Try to initialize webcam
+            video_capture = cv2.VideoCapture(0)
+            if not video_capture.isOpened():
                 return jsonify({'error': 'Could not access webcam. Please check camera permissions.'}), 500
                 
             is_running = True
@@ -374,36 +436,13 @@ if __name__ == '__main__':
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
     print("Starting server in production mode (no debug, no watchdog)")
     
-    # Get port from environment variable
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Starting Python server on port {port}")
-    
-    try:
-        # Initialize face detection before starting server
-        print("Initializing face detection model...")
-        if not initialize_face_detection():
-            print("Failed to initialize face detection model")
-            sys.exit(1)
-        print("Face detection model initialized successfully")
-            
-        # Try to start server
-        try:
-            print(f"Starting Flask server on port {port}...")
-            # Use eventlet for production
-            import eventlet
-            eventlet.monkey_patch()
-            socketio.run(app, debug=False, host='0.0.0.0', port=port)
-        except OSError as e:
-            if e.errno == 98:  # Address already in use
-                print(f"Port {port} is in use, trying port {port + 1}")
-                try:
-                    socketio.run(app, debug=False, host='0.0.0.0', port=port + 1)
-                except Exception as e:
-                    print(f"Failed to start server on port {port + 1}: {str(e)}")
-                    sys.exit(1)
-            else:
-                print(f"Failed to start server: {str(e)}")
-                sys.exit(1)
-    except Exception as e:
-        print(f"Server startup error: {str(e)}")
+    # Initialize face detection before starting server
+    print("Initializing face detection model...")
+    if not initialize_face_detection():
+        print("Failed to initialize face detection model")
         sys.exit(1)
+    print("Face detection model initialized successfully")
+            
+    # Start server
+    print(f"Starting Flask server on port {port}...")
+    socketio.run(app, debug=False, host='0.0.0.0', port=port)
