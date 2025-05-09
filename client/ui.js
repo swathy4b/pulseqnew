@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (notificationsEnabled) {
         const notification = new Notification('I-SmartQueue', {
           body: message,
-          icon: 'https://via.placeholder.com/64'
+          icon: 'https://placehold.co/64x64?text=Q'
         });
         
         notification.onclick = function() {
