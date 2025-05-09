@@ -170,6 +170,25 @@
             .ticket-row { flex-direction: column; align-items: flex-start; gap: 4px; }
             .ticket-value { font-size: 1rem; }
         }
+        .confetti {
+            pointer-events: none;
+            position: absolute;
+            left: 0; top: 0; width: 100%; height: 100%;
+            z-index: 100;
+            overflow: visible;
+        }
+        .confetti-piece {
+            position: absolute;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: confetti-fall 1.5s linear forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-40px) scale(1) rotate(0deg); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(400px) scale(0.7) rotate(360deg); opacity: 0; }
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -180,6 +199,7 @@
             <h1>PulseQ</h1>
             <p class="subtitle">Your queue confirmation</p>
         </div>
+        <div class="confetti" id="confetti"></div>
         <div class="ticket-body">
             <div class="status-icon">
                 <i class="fas fa-check-circle"></i>
@@ -320,6 +340,19 @@
             if (!(date instanceof Date) || isNaN(date)) return '--';
             return date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
+        function showConfetti() {
+            const confettiColors = ['#4f46e5', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#818cf8', '#f472b6'];
+            const confettiContainer = document.getElementById('confetti');
+            for (let i = 0; i < 40; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti-piece';
+                conf.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                conf.style.left = Math.random() * 100 + '%';
+                conf.style.animationDelay = (Math.random() * 0.7) + 's';
+                confettiContainer.appendChild(conf);
+                setTimeout(() => conf.remove(), 1800);
+            }
+        }
         function showNotification(message) {
             const notification = document.getElementById('queueNotification');
             if (!notification) return;
@@ -328,6 +361,7 @@
             textElement.textContent = message;
             notification.style.display = 'flex';
             notification.classList.add('show');
+            if (message.includes("your turn")) showConfetti();
             setTimeout(() => {
                 notification.classList.remove('show');
                 setTimeout(() => { notification.style.display = 'none'; }, 300);

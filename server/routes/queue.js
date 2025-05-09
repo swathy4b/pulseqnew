@@ -160,7 +160,6 @@ router.post('/process-next', async (req, res) => {
       { status: 'processing' },
       { new: true, sort: { joinTime: 1 } }
     );
-
     if (!item) {
       item = await Queue.findOneAndUpdate(
         { status: 'waiting' },
@@ -168,24 +167,24 @@ router.post('/process-next', async (req, res) => {
         { new: true, sort: { joinTime: 1 } }
       );
     }
-
     if (item) {
       req.app.get('io').emit('queueUpdate', {
         type: 'process',
         item,
         message: `Processing queue number ${item.queueNumber}. Secret key: ${item.secretKey}`
       });
-
       req.app.get('io').emit('personalNotification', {
         secretKey: item.secretKey,
         message: `It's your turn! Please proceed to the counter.`
       });
+      return res.json({ success: true, data: item });
+    } else {
+      // No one to process
+      return res.status(400).json({ success: false, error: 'No one is waiting in the queue to process.' });
     }
-
-    res.json({ success: true, data: item });
   } catch (error) {
     console.error('Process next error:', error);
-    res.status(500).json({ error: 'Failed to process next in queue' });
+    res.status(500).json({ success: false, error: 'Failed to process next in queue. Please try again or check the server logs.' });
   }
 });
 
