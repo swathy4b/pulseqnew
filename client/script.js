@@ -570,7 +570,19 @@ document.addEventListener('DOMContentLoaded', function() {
     userPhoneInput.value = '';
   });
   
-  processNextBtn.addEventListener('click', processNext);
+  processNextBtn.addEventListener('click', async () => {
+    const result = await processNext();
+    // Always refresh the queue after processing next
+    try {
+      const response = await fetch('/api/queue');
+      if (response.ok) {
+        queue = await response.json();
+        updateQueueUI(queue);
+      }
+    } catch (error) {
+      console.error('Error refreshing queue after processNext:', error);
+    }
+  });
   clearQueueBtn.addEventListener('click', clearQueue);
   
   liveMonitoringBtn.addEventListener('click', () => {
