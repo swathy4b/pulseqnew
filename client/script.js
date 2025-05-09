@@ -51,8 +51,14 @@ document.addEventListener('DOMContentLoaded', function() {
   const BACKEND_URL = '/detection';
 
   // Socket connections
-  const queueSocket = io(); // For queue management
-  const detectionSocket = io(BACKEND_URL); // For face detection
+  const socket = io({
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000
+  });
+
+  // Detection socket for face detection
+  const detectionSocket = io(BACKEND_URL);
 
   // State
   let notificationCount = 0;
@@ -677,12 +683,30 @@ document.addEventListener('DOMContentLoaded', function() {
     stopBtn.disabled = false;
   });
 
-  // Detection socket event listeners
-  detectionSocket.on('connect', () => {
-    console.log('Connected to detection server');
-    checkDetectionStatus();
+  // Add socket connection logging
+  socket.on('connect', () => {
+    console.log('%c Connected to server', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+    showNotification('Connected to server', 'success');
+    
+    // Test socket connection
+    socket.emit('test_connection', { message: 'Hello from main page' });
   });
 
+  socket.on('test_response', (data) => {
+    console.log('%c Test response received:', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', data);
+  });
+
+  socket.on('connect_error', (error) => {
+    console.log('%c Connection Error:', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
+    showNotification('Connection Error: ' + error.message, 'error');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('%c Disconnected from server', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;');
+    showNotification('Disconnected from server', 'error');
+  });
+
+  // Detection socket event listeners
   detectionSocket.on('video_frame', (data) => {
     if (liveMonitoringModal.style.display === 'flex') {
       // Update live feed
@@ -992,42 +1016,85 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 7. Evacuate Now button logic
   const evacuateNowBtn = document.getElementById('evacuateNowBtn');
-  evacuateNowBtn.addEventListener('click', () => {
+  if (evacuateNowBtn) {
+    console.log('Evacuation button found');
+    evacuateNowBtn.addEventListener('click', () => {
+      console.log('%c Evacuate Now button clicked', 'background: #9C27B0; color: white; padding: 2px 5px; border-radius: 3px;');
+      if (confirm('Are you sure you want to trigger an emergency evacuation? This will alert all queued customers.')) {
+        console.log('%c Emitting triggerEvacuation event', 'background: #E91E63; color: white; padding: 2px 5px; border-radius: 3px;');
+        socket.emit('triggerEvacuation');
+        showNotification('Evacuation alert sent to all customers', 'warning');
+      }
+    });
+  } else {
+    console.error('Evacuation button not found in the DOM');
+  }
+
+  // Listen for evacuation events
+  socket.on('evacuationAlert', (data) => {
+    console.log('%c Received evacuation alert:', 'background: #FF5722; color: white; padding: 2px 5px; border-radius: 3px;', data);
+    showNotification('Emergency evacuation in progress!', 'warning');
+    
+    // Play evacuation sound
+    const evacuationSound = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+    evacuationSound.play();
+    
+    // Show evacuation banner
     const banner = document.createElement('div');
-    banner.textContent = '🚨 EMERGENCY EVACUATION! Please leave the area immediately!';
     banner.style.position = 'fixed';
-    banner.style.top = '40%';
-    banner.style.left = '50%';
-    banner.style.transform = 'translate(-50%, -50%)';
-    banner.style.background = 'red';
-    banner.style.color = '#fff';
-    banner.style.fontSize = '2rem';
-    banner.style.padding = '30px 60px';
-    banner.style.borderRadius = '20px';
+    banner.style.top = '0';
+    banner.style.left = '0';
+    banner.style.width = '100%';
+    banner.style.padding = '20px';
+    banner.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+    banner.style.color = 'white';
+    banner.style.textAlign = 'center';
+    banner.style.fontSize = '24px';
+    banner.style.fontWeight = 'bold';
     banner.style.zIndex = '9999';
+    banner.style.animation = 'pulse 1s infinite';
+    banner.textContent = '🚨 EMERGENCY EVACUATION! Please leave the area immediately!';
     document.body.appendChild(banner);
-    // Play beep
-    const beep = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
-    beep.play();
-    setTimeout(() => banner.remove(), 5000);
+    
+    // Remove banner after 5 seconds
+    setTimeout(() => {
+      banner.remove();
+    }, 5000);
   });
 
-  // 8. Integrate with detectionSocket for demo realism
-  // (Show detected face and update risk bar on real detection)
-  detectionSocket.on('video_frame', (data) => {
-    if (liveMonitoringModal.style.display === 'flex') {
-      liveFeedImg.src = `data:image/jpeg;base64,${data.frame}`;
-      crowdAnalytics.currentCount = data.count;
-      currentCountEl.textContent = data.count;
-      if (data.count > 15) {
-        addNotification('⚠️ Crowd limit exceeded! Please manage the flow.', 'warning');
-      }
-      if (Math.random() < 0.01) {
-        addNotification('🚨 Suspect matched: John Doe (ID: 12345)', 'error');
-        showFaceMatchModal();
-        showDetectedFace();
-      }
-      updateRiskBar(data.count);
+  // Add styles for evacuation button
+  const style = document.createElement('style');
+  style.textContent = `
+    .evacuate-btn {
+        background: linear-gradient(90deg, #ef4444, #f59e0b);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
     }
-  });
+
+    .evacuate-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+    }
+
+    .evacuate-btn:active {
+        transform: translateY(0);
+    }
+
+    .evacuate-btn i {
+        font-size: 1.2rem;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Call this when initializing admin interface
+  addEvacuationButton();
 });

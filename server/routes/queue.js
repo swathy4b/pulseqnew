@@ -155,36 +155,69 @@ router.get('/status/:id', async (req, res) => {
 // Process next in queue
 router.post('/process-next', async (req, res) => {
   try {
+    // First try to find a priority customer
     let item = await Queue.findOneAndUpdate(
-      { status: 'waiting', priority: { $ne: 'none' } },
+      { 
+        status: 'waiting',
+        priority: { $ne: 'none' }
+      },
       { status: 'processing' },
-      { new: true, sort: { joinTime: 1 } }
+      { 
+        new: true,
+        sort: { joinTime: 1 }
+      }
     );
+
+    // If no priority customer, find the next regular customer
     if (!item) {
       item = await Queue.findOneAndUpdate(
         { status: 'waiting' },
         { status: 'processing' },
-        { new: true, sort: { joinTime: 1 } }
+        { 
+          new: true,
+          sort: { joinTime: 1 }
+        }
       );
     }
+
     if (item) {
+      // Emit queue update to all clients
       req.app.get('io').emit('queueUpdate', {
         type: 'process',
-        item,
+        item: {
+          ...item.toObject(),
+          queueNumber: item.queueNumber || '--',
+          position: item.position || '--'
+        },
         message: `Processing queue number ${item.queueNumber}. Secret key: ${item.secretKey}`
       });
+
+      // Send personal notification to the customer
       req.app.get('io').emit('personalNotification', {
         secretKey: item.secretKey,
         message: `It's your turn! Please proceed to the counter.`
       });
-      return res.json({ success: true, data: item });
+
+      return res.json({ 
+        success: true, 
+        data: {
+          ...item.toObject(),
+          queueNumber: item.queueNumber || '--',
+          position: item.position || '--'
+        }
+      });
     } else {
-      // No one to process
-      return res.status(400).json({ success: false, error: 'No one is waiting in the queue to process.' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No one is waiting in the queue to process.' 
+      });
     }
   } catch (error) {
     console.error('Process next error:', error);
-    res.status(500).json({ success: false, error: 'Failed to process next in queue. Please try again or check the server logs.' });
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to process next in queue. Please try again or check the server logs.' 
+    });
   }
 });
 

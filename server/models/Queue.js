@@ -16,7 +16,7 @@ const queueSchema = new mongoose.Schema({
   notification: { type: Boolean, default: true },
   secretKey: { type: String, required: true },
   position: { type: Number, required: true },
-  queueNumber: { type: Number, required: true, unique: true },
+  queueNumber: { type: Number, required: true },
   joinTime: { type: Date, default: Date.now },
   notified: {
     type: Boolean,
@@ -30,19 +30,24 @@ const queueSchema = new mongoose.Schema({
 
 // Auto-generate queue number before saving
 queueSchema.pre('save', async function(next) {
-  if (!this.queueNumber) {
-    try {
+  try {
+    if (!this.queueNumber) {
       const highestQueue = await this.constructor.findOne({}, { queueNumber: 1 })
         .sort({ queueNumber: -1 })
         .limit(1);
       this.queueNumber = highestQueue ? highestQueue.queueNumber + 1 : 1;
-    } catch (error) {
-      console.error('Error generating queue number:', error);
-      next(error);
-      return;
     }
+    if (!this.position) {
+      const highestPosition = await this.constructor.findOne({}, { position: 1 })
+        .sort({ position: -1 })
+        .limit(1);
+      this.position = highestPosition ? highestPosition.position + 1 : 1;
+    }
+    next();
+  } catch (error) {
+    console.error('Error in queue pre-save:', error);
+    next(error);
   }
-  next();
 });
 
 module.exports = mongoose.model('Queue', queueSchema);

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Queue Confirmation - PulseQ</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #4f46e5;
@@ -19,6 +20,13 @@
             --glass-border: rgba(255, 255, 255, 0.2);
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             min-height: 100vh;
@@ -26,30 +34,37 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(120deg, #6366f1 0%, #818cf8 50%, #10b981 100%);
+            background: linear-gradient(-45deg, #4f46e5, #6366f1, #10b981, #f59e0b);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
             overflow: hidden;
         }
+
         .animated-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             z-index: 0;
             pointer-events: none;
         }
+
         .floating-shape {
             position: absolute;
             border-radius: 50%;
-            opacity: 0.18;
-            filter: blur(40px);
+            opacity: 0.15;
+            filter: blur(60px);
             animation: float 12s ease-in-out infinite alternate;
         }
-        .shape1 { width: 320px; height: 320px; background: #4f46e5; left: 5vw; top: 10vh; animation-delay: 0s; }
-        .shape2 { width: 220px; height: 220px; background: #10b981; right: 8vw; top: 20vh; animation-delay: 2s; }
-        .shape3 { width: 180px; height: 180px; background: #f59e0b; left: 20vw; bottom: 10vh; animation-delay: 4s; }
-        .shape4 { width: 140px; height: 140px; background: #ef4444; right: 18vw; bottom: 8vh; animation-delay: 6s; }
+
+        .shape1 { width: 400px; height: 400px; background: #4f46e5; left: 5vw; top: 10vh; animation-delay: 0s; }
+        .shape2 { width: 300px; height: 300px; background: #10b981; right: 8vw; top: 20vh; animation-delay: 2s; }
+        .shape3 { width: 250px; height: 250px; background: #f59e0b; left: 20vw; bottom: 10vh; animation-delay: 4s; }
+        .shape4 { width: 200px; height: 200px; background: #ef4444; right: 18vw; bottom: 8vh; animation-delay: 6s; }
+
         @keyframes float {
-            0% { transform: translateY(0) scale(1); }
-            100% { transform: translateY(-40px) scale(1.08); }
+            0% { transform: translateY(0) scale(1) rotate(0deg); }
+            100% { transform: translateY(-40px) scale(1.08) rotate(5deg); }
         }
+
         .ticket-card {
             position: relative;
             z-index: 2;
@@ -63,185 +78,371 @@
             animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
             backdrop-filter: blur(18px);
             margin: 32px 0;
+            transform-style: preserve-3d;
+            perspective: 1000px;
         }
+
         @keyframes popIn {
-            0% { transform: scale(0.7); opacity: 0; }
-            80% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(0.7) rotateX(-10deg); opacity: 0; }
+            80% { transform: scale(1.1) rotateX(5deg); opacity: 1; }
+            100% { transform: scale(1) rotateX(0); opacity: 1; }
         }
+
         .ticket-header {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             padding: 36px 24px 24px 24px;
             text-align: center;
             position: relative;
+            overflow: hidden;
         }
+
+        .ticket-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .logo {
-            font-size: 2.7rem;
+            font-size: 3.2rem;
             margin-bottom: 18px;
             animation: pulse 2s infinite;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.08); }
             100% { transform: scale(1); }
         }
+
         .ticket-header h1 {
-            font-size: 2.6rem;
+            font-size: 2.8rem;
             font-weight: 800;
             margin-bottom: 10px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.10);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
             letter-spacing: 1px;
+            background: linear-gradient(to right, #fff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+
         .subtitle {
-            font-size: 1.15rem;
-            opacity: 0.93;
+            font-size: 1.2rem;
+            opacity: 0.95;
             font-weight: 500;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
+
         .ticket-body {
             padding: 36px 24px 24px 24px;
         }
+
         .status-icon {
             text-align: center;
-            font-size: 3.2rem;
+            font-size: 3.5rem;
             color: var(--success);
             margin-bottom: 28px;
             animation: fadeIn 0.5s ease-out;
+            text-shadow: 0 4px 12px rgba(16,185,129,0.3);
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+
         .queue-number-big {
-            font-size: 4.5rem;
+            font-size: 5rem;
             font-weight: 900;
             text-align: center;
             color: var(--primary);
             margin-bottom: 36px;
-            text-shadow: 0 2px 16px rgba(79, 70, 229, 0.18);
+            text-shadow: 0 4px 16px rgba(79, 70, 229, 0.25);
             animation: scaleIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
             letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+
         @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
+            from { opacity: 0; transform: scale(0.8) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
+
         .customer-details {
-            background: rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.6);
             border-radius: 18px;
-            padding: 22px;
+            padding: 24px;
             margin-bottom: 28px;
-            box-shadow: 0 2px 12px rgba(79,70,229,0.07);
-            animation: fadeIn 1.2s;
+            box-shadow: 0 4px 16px rgba(79,70,229,0.08);
+            animation: slideUp 1.2s;
+            border: 1px solid rgba(255,255,255,0.3);
         }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .ticket-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 13px 0;
+            padding: 14px 0;
             border-bottom: 1.5px solid var(--glass-border);
-            transition: background 0.3s;
+            transition: all 0.3s ease;
         }
+
+        .ticket-row:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateX(5px);
+        }
+
         .ticket-row:last-child { border-bottom: none; }
-        .ticket-label { color: var(--text-light); font-size: 1.08rem; font-weight: 500; }
-        .ticket-value { font-weight: 700; color: var(--text); font-size: 1.18rem; letter-spacing: 1px; transition: color 0.3s; }
+        .ticket-label { color: var(--text-light); font-size: 1.1rem; font-weight: 500; }
+        .ticket-value { font-weight: 700; color: var(--text); font-size: 1.2rem; letter-spacing: 0.5px; }
+
         .queue-status {
-            background: rgba(255,255,255,0.45);
+            background: rgba(255,255,255,0.5);
             border-radius: 18px;
-            padding: 22px;
+            padding: 24px;
             margin-bottom: 28px;
-            box-shadow: 0 2px 12px rgba(16,185,129,0.07);
-            animation: fadeIn 1.5s;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.08);
+            animation: slideUp 1.5s;
+            border: 1px solid rgba(255,255,255,0.3);
         }
+
         .progress-container {
-            background: rgba(255,255,255,0.3);
-            border-radius: 8px;
-            height: 10px;
-            margin-top: 18px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 12px;
+            height: 12px;
+            margin-top: 20px;
             overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
+
         .progress-bar {
             background: linear-gradient(90deg, var(--primary), var(--secondary));
             height: 100%;
             width: 0;
-            transition: width 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+            transition: width 0.6s cubic-bezier(.68,-0.55,.27,1.55);
+            box-shadow: 0 2px 8px rgba(79,70,229,0.3);
         }
+
         .queue-timer {
             text-align: center;
-            font-size: 1.6rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: var(--primary);
             margin-top: 28px;
-            font-family: monospace;
-            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 8px rgba(79,70,229,0.2);
         }
+
         .notification-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
         }
+
         .notification {
             background: white;
-            border-radius: 14px;
-            padding: 18px 28px;
-            box-shadow: 0 4px 18px rgba(0,0,0,0.13);
+            border-radius: 16px;
+            padding: 20px 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             display: none;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
             transform: translateX(120%);
-            transition: transform 0.3s cubic-bezier(.68,-0.55,.27,1.55);
+            transition: all 0.4s cubic-bezier(.68,-0.55,.27,1.55);
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+            max-width: 400px;
+            width: 100%;
         }
-        .notification.show { transform: translateX(0); }
-        .notification i { color: var(--primary); font-size: 1.3rem; }
-        .notification-text { color: var(--text); font-weight: 600; font-size: 1.1rem; }
-        .confetti {
-            pointer-events: none;
-            position: absolute;
-            left: 0; top: 0; width: 100%; height: 100%;
-            z-index: 100;
-            overflow: visible;
+
+        .notification.show { 
+            transform: translateX(0);
+            animation: notificationPulse 2s infinite;
         }
-        .confetti-piece {
-            position: absolute;
-            width: 12px; height: 12px;
-            border-radius: 50%;
-            opacity: 0.8;
-            animation: confetti-fall 2.2s linear forwards;
+
+        @keyframes notificationPulse {
+            0% { box-shadow: 0 8px 24px rgba(79,70,229,0.15); }
+            50% { box-shadow: 0 8px 32px rgba(79,70,229,0.25); }
+            100% { box-shadow: 0 8px 24px rgba(79,70,229,0.15); }
         }
-        @keyframes confetti-fall {
-            0% { transform: translateY(-40px) scale(1) rotate(0deg); opacity: 1; }
-            80% { opacity: 1; }
-            100% { transform: translateY(400px) scale(0.7) rotate(360deg); opacity: 0; }
+
+        .notification i { 
+            color: var(--primary); 
+            font-size: 1.5rem;
+            animation: bellRing 1s infinite;
         }
+
+        @keyframes bellRing {
+            0% { transform: rotate(0); }
+            20% { transform: rotate(15deg); }
+            40% { transform: rotate(-15deg); }
+            60% { transform: rotate(7deg); }
+            80% { transform: rotate(-7deg); }
+            100% { transform: rotate(0); }
+        }
+
+        .notification-text { 
+            color: var(--text); 
+            font-weight: 600; 
+            font-size: 1.2rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
         .now-serving-badge {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.1rem;
+            font-size: 2.2rem;
             font-weight: bold;
             color: #fff;
             background: linear-gradient(90deg, #4f46e5, #10b981, #f59e0b, #ef4444);
+            background-size: 300% 300%;
+            animation: gradientMove 8s ease infinite;
             border-radius: 18px;
-            box-shadow: 0 4px 24px rgba(79,70,229,0.15);
+            box-shadow: 0 8px 32px rgba(79,70,229,0.2);
             margin: 28px auto 0 auto;
-            padding: 20px 0;
+            padding: 24px 0;
             width: 100%;
             animation: popIn 0.7s cubic-bezier(.68,-0.55,.27,1.55);
             letter-spacing: 1.5px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
         }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         @media (max-width: 480px) {
-            .ticket-card { border-radius: 18px; }
-            .ticket-header { padding: 24px 10px; }
-            .ticket-body { padding: 18px 8px; }
-            .queue-number-big { font-size: 2.5rem; }
-            .ticket-row { flex-direction: column; align-items: flex-start; gap: 4px; }
-            .ticket-value { font-size: 1rem; }
-            .now-serving-badge { font-size: 1.2rem; padding: 10px 0; }
+            .ticket-card { 
+                border-radius: 24px;
+                margin: 16px;
+            }
+            .ticket-header { 
+                padding: 24px 16px; 
+            }
+            .ticket-body { 
+                padding: 24px 16px; 
+            }
+            .queue-number-big { 
+                font-size: 3.5rem; 
+            }
+            .ticket-row { 
+                flex-direction: column; 
+                align-items: flex-start; 
+                gap: 4px; 
+            }
+            .ticket-value { 
+                font-size: 1.1rem; 
+            }
+            .now-serving-badge { 
+                font-size: 1.4rem; 
+                padding: 16px 0; 
+            }
+        }
+
+        /* Sound control button */
+        .sound-control {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .sound-control:hover {
+            transform: scale(1.1);
+        }
+
+        .sound-control i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* Evacuation alert styles */
+        .evacuation-alert {
+            background: linear-gradient(90deg, #ef4444, #f59e0b);
+            color: white;
+            animation: evacuationPulse 1s infinite;
+        }
+
+        .evacuation-alert i {
+            color: white;
+            animation: shake 0.5s infinite;
+        }
+
+        .evacuation-alert .notification-text {
+            color: white;
+            font-weight: 700;
+        }
+
+        @keyframes evacuationPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0% { transform: rotate(0); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+            100% { transform: rotate(0); }
+        }
+
+        .evacuation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(239, 68, 68, 0.1);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .evacuation-overlay.show {
+            opacity: 1;
+        }
+
+        /* Update notification styles for evacuation */
+        .notification.evacuation-alert {
+            border: 2px solid #ef4444;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="animated-bg">
@@ -250,204 +451,300 @@
         <div class="floating-shape shape3"></div>
         <div class="floating-shape shape4"></div>
     </div>
+
     <div class="ticket-card">
         <div class="ticket-header">
-            <div class="logo"><i class="fas fa-people-arrows"></i></div>
-            <h1>PulseQ</h1>
-            <p class="subtitle">Your queue confirmation</p>
+            <div class="logo">🎫</div>
+            <h1>Queue Ticket</h1>
+            <p class="subtitle">Your place in line is confirmed</p>
         </div>
-        <div class="confetti" id="confetti"></div>
+
         <div class="ticket-body">
             <div class="status-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
+
             <div class="queue-number-big" id="queueNumber">--</div>
+
             <div class="customer-details">
                 <div class="ticket-row">
-                    <span class="ticket-label">Name:</span>
-                    <span class="ticket-value" id="userName">--</span>
+                    <span class="ticket-label">Name</span>
+                    <span class="ticket-value" id="customerName">--</span>
                 </div>
                 <div class="ticket-row">
-                    <span class="ticket-label">Phone:</span>
-                    <span class="ticket-value" id="userPhone">--</span>
+                    <span class="ticket-label">Phone</span>
+                    <span class="ticket-value" id="customerPhone">--</span>
                 </div>
                 <div class="ticket-row">
-                    <span class="ticket-label">Queue Number:</span>
-                    <span class="ticket-value" id="queueNumberSmall">--</span>
+                    <span class="ticket-label">Secret Key</span>
+                    <span class="ticket-value" id="secretKey">--</span>
                 </div>
                 <div class="ticket-row">
-                    <span class="ticket-label">Joined At:</span>
+                    <span class="ticket-label">Join Time</span>
                     <span class="ticket-value" id="joinTime">--</span>
                 </div>
             </div>
+
             <div class="queue-status">
                 <div class="ticket-row">
-                    <span class="ticket-label">Your Position:</span>
-                    <span class="ticket-value" id="positionInfo">--</span>
+                    <span class="ticket-label">Current Position</span>
+                    <span class="ticket-value" id="currentPosition">--</span>
                 </div>
                 <div class="ticket-row">
-                    <span class="ticket-label">Estimated Wait:</span>
-                    <span class="ticket-value" id="waitTime">--</span>
+                    <span class="ticket-label">People Ahead</span>
+                    <span class="ticket-value" id="peopleAhead">--</span>
+                </div>
+                <div class="ticket-row">
+                    <span class="ticket-label">Estimated Wait</span>
+                    <span class="ticket-value" id="estimatedWait">--</span>
                 </div>
                 <div class="progress-container">
                     <div class="progress-bar" id="progressBar"></div>
                 </div>
             </div>
-            <div class="queue-timer" id="queueTimer">00:00:00</div>
-        </div>
-        <div class="notification-container">
-            <div id="queueNotification" class="notification">
-                <i class="fas fa-bell"></i>
-                <span class="notification-text"></span>
+
+            <div class="now-serving-badge" id="nowServing">
+                <i class="fas fa-user-clock"></i>
+                <span>Waiting for your turn...</span>
             </div>
+
+            <div class="queue-timer" id="queueTimer">00:00</div>
         </div>
-        <div id="errorMessage" style="color:red; text-align:center; margin-top:20px; display:none;"></div>
-        <div class="now-serving-badge" id="nowServingBadge" style="display:none;">🎉 Now Serving You! 🎉</div>
     </div>
+
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <div class="sound-control" id="soundControl" title="Toggle Sound">
+        <i class="fas fa-volume-up"></i>
+    </div>
+
+    <audio id="notificationSound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Add evacuation alert sound -->
+    <audio id="evacuationSound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // Subtle looping confetti/particles
-        function loopConfetti() {
-            const confettiColors = ['#4f46e5', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#818cf8', '#f472b6'];
-            const confettiContainer = document.getElementById('confetti');
-            for (let i = 0; i < 8; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'confetti-piece';
-                conf.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-                conf.style.left = Math.random() * 100 + '%';
-                conf.style.animationDelay = (Math.random() * 1.5) + 's';
-                confettiContainer.appendChild(conf);
-                setTimeout(() => conf.remove(), 2200);
-            }
-            setTimeout(loopConfetti, 1200);
-        }
-        loopConfetti();
+        // Get queue ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const queueId = urlParams.get('id');
-        if (!queueId || queueId === 'undefined') {
-            alert("No valid queue ID found. Redirecting to home...");
-            window.location.href = '/';
+        const secretKey = urlParams.get('key');
+
+        // Sound control
+        const soundControl = document.getElementById('soundControl');
+        const notificationSound = document.getElementById('notificationSound');
+        let soundEnabled = true;
+
+        soundControl.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundControl.innerHTML = `<i class="fas fa-volume-${soundEnabled ? 'up' : 'mute'}"></i>`;
+        });
+
+        // Connect to Socket.IO with error handling
+        const socket = io({
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+        });
+
+        // Add debug logging
+        socket.on('connect', () => {
+            console.log('%c Connected to server', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;');
+            showNotification('Connected to server', 'success');
+            
+            // Test socket connection
+            socket.emit('test_connection', { message: 'Hello from confirmation page' });
+        });
+
+        socket.on('connect_error', (error) => {
+            console.log('%c Connection Error:', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;', error);
+            showNotification('Connection Error: ' + error.message, 'error');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('%c Disconnected from server', 'background: #f44336; color: white; padding: 2px 5px; border-radius: 3px;');
+            showNotification('Disconnected from server', 'error');
+        });
+
+        // Test response
+        socket.on('test_response', (data) => {
+            console.log('%c Test Response:', 'background: #4CAF50; color: white; padding: 2px 5px; border-radius: 3px;', data);
+        });
+
+        // Initialize timer
+        let startTime = Date.now();
+        const timerElement = document.getElementById('queueTimer');
+        
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            timerElement.textContent = `${minutes}:${seconds}`;
         }
-        let timerInterval;
-        let refreshInterval;
-        let startTime = new Date();
-        let isProcessing = false;
-        let isCompleted = false;
-        function showError(msg) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = msg;
-            errorDiv.style.display = 'block';
-        }
-        async function fetchQueueStatus() {
-            if (!queueId || isCompleted) return;
+        setInterval(updateTimer, 1000);
+
+        // Update queue status
+        async function updateQueueStatus() {
             try {
                 const response = await fetch(`/api/queue/status/${queueId}`);
-                if (!response.ok) throw new Error(`Error: ${response.status}`);
                 const data = await response.json();
-                if (!data.name || !data.phone) {
-                    showError('Could not load your queue details. Please try again or re-register.');
-                    return;
-                }
-                updateUI(data);
-                if (data.status === 'processing' && !isProcessing) {
-                    isProcessing = true;
-                    showNotification("🎉 It's your turn! Please proceed to the counter.");
-                } else if (data.status === 'completed' && !isCompleted) {
-                    isCompleted = true;
-                    showNotification("✅ Service completed! Thank you for using PulseQ.");
-                    clearInterval(timerInterval);
-                    clearInterval(refreshInterval);
-                }
-                if (typeof data.position === 'number' && typeof data.totalInQueue === 'number') {
-                    updateProgressBar(data.position, data.totalInQueue);
+                
+                if (data) {
+                    document.getElementById('queueNumber').textContent = data.queueNumber || '--';
+                    document.getElementById('customerName').textContent = data.name || '--';
+                    document.getElementById('customerPhone').textContent = data.phone || '--';
+                    document.getElementById('secretKey').textContent = data.secretKey || '--';
+                    document.getElementById('joinTime').textContent = new Date(data.joinTime).toLocaleTimeString();
+                    document.getElementById('currentPosition').textContent = data.position || '--';
+                    document.getElementById('peopleAhead').textContent = (data.position - 1) || '--';
+                    document.getElementById('estimatedWait').textContent = `${data.estimatedWaitMinutes || '--'} min`;
+
+                    // Update progress bar
+                    const progressBar = document.getElementById('progressBar');
+                    const totalInQueue = data.totalInQueue || 1;
+                    const position = data.position || 1;
+                    const progress = ((totalInQueue - position + 1) / totalInQueue) * 100;
+                    progressBar.style.width = `${progress}%`;
+
+                    // Update now serving badge
+                    const nowServing = document.getElementById('nowServing');
+                    if (data.status === 'processing') {
+                        nowServing.innerHTML = '<i class="fas fa-user-check"></i><span>Your turn! Please proceed to the counter</span>';
+                        nowServing.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                        
+                        // Play sound and speak notification
+                        if (soundEnabled) {
+                            notificationSound.play();
+                            speakNotification("It's your turn! Please proceed to the counter.");
+                        }
+                    } else if (data.status === 'completed') {
+                        nowServing.innerHTML = '<i class="fas fa-check-double"></i><span>Service completed! Thank you for using PulseQ</span>';
+                        nowServing.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                        
+                        // Play sound and speak notification
+                        if (soundEnabled) {
+                            notificationSound.play();
+                            speakNotification("Service completed! Thank you for using PulseQ.");
+                        }
+                    }
                 }
             } catch (error) {
-                showError('Could not load your queue details. Please try again or re-register.');
+                console.error('Error updating queue status:', error);
             }
         }
-        function updateUI(data) {
-            document.getElementById('queueNumber').textContent = data.queueNumber || '--';
-            document.getElementById('queueNumberSmall').textContent = data.queueNumber || '--';
-            document.getElementById('userName').textContent = data.name || '--';
-            document.getElementById('userPhone').textContent = data.phone || '--';
-            document.getElementById('joinTime').textContent = data.joinTime ? formatDateTime(new Date(data.joinTime)) : '--';
-            document.getElementById('positionInfo').textContent = data.position || '--';
-            document.getElementById('waitTime').textContent = data.estimatedWaitMinutes ? `${data.estimatedWaitMinutes} min` : '--';
-            const statusIcon = document.querySelector('.status-icon i');
-            const statusContainer = document.querySelector('.status-icon');
-            if (statusIcon && statusContainer) {
-                switch(data.status) {
-                    case 'processing':
-                        statusIcon.className = 'fas fa-hourglass-half';
-                        statusContainer.style.color = '#6366f1';
-                        break;
-                    case 'completed':
-                        statusIcon.className = 'fas fa-check-circle';
-                        statusContainer.style.color = '#10b981';
-                        break;
-                    default:
-                        statusIcon.className = 'fas fa-check-circle';
-                        statusContainer.style.color = '#10b981';
+
+        // Text-to-speech function
+        function speakNotification(message) {
+            if ('speechSynthesis' in window) {
+                const speech = new SpeechSynthesisUtterance(message);
+                speech.volume = 1;
+                speech.rate = 1;
+                speech.pitch = 1;
+                window.speechSynthesis.speak(speech);
+            }
+        }
+
+        // Listen for personal notifications
+        socket.on('personalNotification', (data) => {
+            if (data.secretKey === secretKey) {
+                showNotification(data.message);
+                if (soundEnabled) {
+                    notificationSound.play();
+                    speakNotification(data.message);
                 }
             }
-        }
-        function updateProgressBar(position, total) {
-            const progressBar = document.getElementById('progressBar');
-            if (!progressBar) return;
-            if (typeof position !== 'number' || typeof total !== 'number') {
-                progressBar.style.width = '0%';
-                return;
-            }
-            const progress = Math.min(Math.max(((total - position) / total) * 100, 0), 100);
-            progressBar.style.width = `${progress}%`;
-        }
-        function updateTimer() {
-            const timerElement = document.getElementById('queueTimer');
-            if (!timerElement) return;
-            const now = new Date();
-            const diff = now - startTime;
-            const hours = Math.floor(diff / 3600000);
-            const minutes = Math.floor((diff % 3600000) / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        }
-        function formatDateTime(date) {
-            if (!(date instanceof Date) || isNaN(date)) return '--';
-            return date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        }
-        function showConfetti() {
-            const confettiColors = ['#4f46e5', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#818cf8', '#f472b6'];
-            const confettiContainer = document.getElementById('confetti');
-            for (let i = 0; i < 40; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'confetti-piece';
-                conf.style.background = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-                conf.style.left = Math.random() * 100 + '%';
-                conf.style.animationDelay = (Math.random() * 0.7) + 's';
-                confettiContainer.appendChild(conf);
-                setTimeout(() => conf.remove(), 2200);
-            }
-        }
+        });
+
+        // Show notification
         function showNotification(message) {
-            const notification = document.getElementById('queueNotification');
-            if (!notification) return;
-            const textElement = notification.querySelector('.notification-text');
-            if (!textElement) return;
-            textElement.textContent = message;
-            notification.style.display = 'flex';
-            notification.classList.add('show');
-            if (message.includes("your turn")) {
-                showConfetti();
-                document.getElementById('nowServingBadge').style.display = 'flex';
-            }
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `
+                <i class="fas fa-bell"></i>
+                <span class="notification-text">${message}</span>
+            `;
+            container.appendChild(notification);
+            setTimeout(() => notification.classList.add('show'), 100);
             setTimeout(() => {
                 notification.classList.remove('show');
-                setTimeout(() => { notification.style.display = 'none'; }, 300);
+                setTimeout(() => notification.remove(), 300);
             }, 5000);
         }
-        if (queueId) {
-            timerInterval = setInterval(updateTimer, 1000);
-            fetchQueueStatus();
-            refreshInterval = setInterval(fetchQueueStatus, 5000);
+
+        // Initial update
+        updateQueueStatus();
+        // Update every 10 seconds
+        setInterval(updateQueueStatus, 10000);
+
+        // Listen for queue updates
+        socket.on('queueUpdate', (data) => {
+            if (data.type === 'process' || data.type === 'complete') {
+                updateQueueStatus();
+            }
+        });
+
+        // Add evacuation sound control
+        const evacuationSound = document.getElementById('evacuationSound');
+        let isEvacuating = false;
+
+        // Listen for evacuation alerts
+        socket.on('evacuationAlert', (data) => {
+            alert('Evacuation event received!'); // DEBUG: Show alert when event is received
+            console.log('%c Received evacuation alert:', 'background: #ff9800; color: white; padding: 2px 5px; border-radius: 3px;', data);
+            if (soundEnabled) {
+                // Play evacuation sound
+                evacuationSound.play();
+                // Speak evacuation message
+                speakNotification(data.voiceMessage || "Emergency evacuation! Please exit the building immediately. Follow the emergency exits. This is not a drill.");
+                // Show evacuation notification
+                showEvacuationAlert(data.message);
+            }
+        });
+
+        // Show evacuation alert
+        function showEvacuationAlert(message) {
+            console.log('%c Showing evacuation alert:', 'background: #2196F3; color: white; padding: 2px 5px; border-radius: 3px;', message);
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = 'notification evacuation-alert';
+            notification.innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="notification-text">${message || 'Emergency Evacuation! Please exit immediately.'}</span>
+            `;
+            container.appendChild(notification);
+            setTimeout(() => notification.classList.add('show'), 100);
+
+            // Add evacuation overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'evacuation-overlay';
+            document.body.appendChild(overlay);
+            setTimeout(() => overlay.classList.add('show'), 100);
+
+            // Update status badge
+            const nowServing = document.getElementById('nowServing');
+            nowServing.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Emergency Evacuation! Exit Immediately</span>';
+            nowServing.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+
+            // Repeat voice announcement every 30 seconds
+            if (soundEnabled) {
+                const repeatInterval = setInterval(() => {
+                    if (soundEnabled) {
+                        speakNotification("Emergency evacuation! Please exit the building immediately. Follow the emergency exits. This is not a drill.");
+                    }
+                }, 30000);
+
+                // Clear interval when sound is disabled
+                soundControl.addEventListener('click', () => {
+                    if (!soundEnabled) {
+                        clearInterval(repeatInterval);
+                    }
+                }, { once: true });
+            }
         }
     </script>
 </body>
