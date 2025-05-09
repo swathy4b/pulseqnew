@@ -246,9 +246,20 @@ app.get('/', (req, res) => {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-    console.log('Client connected');
+    console.log('Client connected:', socket.id);
+
+    // Handle test connection
+    socket.on('test_connection', (data) => {
+        console.log('Test connection received from client:', data);
+        socket.emit('test_response', { 
+            status: 'success',
+            message: 'Server received your test message',
+            clientId: socket.id
+        });
+    });
 
     socket.on('joinQueue', async (data) => {
+        console.log('Join queue request:', data);
         try {
             const { name, phone, priority, notification } = data;
             const queueItem = new Queue({
@@ -267,6 +278,7 @@ io.on('connection', (socket) => {
     });
     
     socket.on('processNext', async () => {
+        console.log('Process next request received');
         try {
             let item = await Queue.findOneAndUpdate(
                 { status: 'waiting', priority: { $ne: 'none' } },
@@ -282,7 +294,10 @@ io.on('connection', (socket) => {
                 );
             }
             
-            if (item) io.emit('queueUpdate', await Queue.find());
+            if (item) {
+                console.log('Processing next item:', item);
+                io.emit('queueUpdate', await Queue.find());
+            }
         } catch (error) {
             console.error('Process next error:', error);
             socket.emit('error', { message: 'Failed to process next in queue. Please try again.' });
@@ -290,6 +305,7 @@ io.on('connection', (socket) => {
     });
     
     socket.on('clearQueue', async () => {
+        console.log('Clear queue request received');
         try {
             await Queue.deleteMany({});
             io.emit('queueUpdate', []);
@@ -300,13 +316,18 @@ io.on('connection', (socket) => {
     });
 
     socket.on('evacuate_now', () => {
-        io.emit('evacuation_alert', {
+        console.log('Evacuate now request received from client:', socket.id);
+        // Broadcast evacuation alert to all connected clients
+        io.emit('evacuationAlert', {
             message: '🚨 EMERGENCY EVACUATION! Please leave the area immediately!',
+            voiceMessage: 'Emergency evacuation! Please exit the building immediately. Follow the emergency exits. This is not a drill.',
             timestamp: new Date().toISOString()
         });
+        console.log('Emitted evacuationAlert event to all clients');
         
         Queue.deleteMany({})
             .then(() => {
+                console.log('Queue cleared successfully');
                 io.emit('queueUpdate', []);
             })
             .catch(error => {
@@ -314,10 +335,44 @@ io.on('connection', (socket) => {
             });
     });
 
+    socket.on('triggerEvacuation', () => {
+        console.log('Trigger evacuation request received from client:', socket.id);
+        // Broadcast evacuation alert to all connected clients
+        io.emit('evacuationAlert', {
+            message: '🚨 EMERGENCY EVACUATION! Please leave the area immediately!',
+            voiceMessage: 'Emergency evacuation! Please exit the building immediately. Follow the emergency exits. This is not a drill.',
+            timestamp: new Date().toISOString()
+        });
+        console.log('Emitted evacuationAlert event to all clients');
+
+        // Clear the queue
+        Queue.deleteMany({})
+            .then(() => {
+                console.log('Queue cleared successfully');
+                io.emit('queueUpdate', []);
+            })
+            .catch(error => {
+                console.error('Error clearing queue during evacuation:', error);
+            });
+
+        // Log evacuation event
+        console.log('Emergency evacuation triggered');
+    });
+
     socket.on('disconnect', () => {
-        console.log('Client disconnected');
+        console.log('Client disconnected:', socket.id);
     });
 });
+
+// TEST: Emit evacuationAlert to all clients every 30 seconds
+setInterval(() => {
+    io.emit('evacuationAlert', {
+        message: '🚨 TEST: EMERGENCY EVACUATION! Please leave the area immediately!',
+        voiceMessage: 'Test evacuation! Please exit the building immediately.',
+        timestamp: new Date().toISOString()
+    });
+    console.log('Test evacuationAlert sent to all clients');
+}, 30000); // every 30 seconds
 
 // Start Node.js server
 http.listen(port, '0.0.0.0', () => {
