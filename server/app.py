@@ -16,6 +16,8 @@ import os
 import logging
 import socket
 import sys
+import qrcode
+import io
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -48,6 +50,43 @@ mp_drawing = mp.solutions.drawing_utils
 
 # Get port from environment variable or use default
 port = int(os.getenv('PORT', 5000))
+
+# QR Code endpoint
+@app.route('/api/queue/qr')
+def generate_qr():
+    try:
+        # Create QR code instance
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        
+        # Add data to QR code
+        # You can customize this URL based on your needs
+        queue_url = f"{request.host_url}queue"
+        qr.add_data(queue_url)
+        qr.make(fit=True)
+        
+        # Create an image from the QR Code
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # Convert to base64
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode()
+        
+        return jsonify({
+            'status': 'success',
+            'qrCode': f'data:image/png;base64,{img_str}'
+        })
+    except Exception as e:
+        logger.error(f"Error generating QR code: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 def initialize_face_detection():
     """Initialize MediaPipe Face Detection"""

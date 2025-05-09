@@ -166,11 +166,23 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const response = await fetch('/api/queue/qr');
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const { qrCode: qrData } = await response.json();
-      qrCode.src = qrData;
-      console.log('QR Code fetched successfully');
+      const data = await response.json();
+      if (data.status === 'success' && data.qrCode) {
+        const qrCodeImg = document.getElementById('qrCode');
+        if (qrCodeImg) {
+          qrCodeImg.src = data.qrCode;
+          console.log('QR Code updated successfully');
+        }
+      } else {
+        throw new Error('Invalid QR code response');
+      }
     } catch (error) {
       console.error('Error fetching QR code:', error);
+      // Show error state in QR code
+      const qrCodeImg = document.getElementById('qrCode');
+      if (qrCodeImg) {
+        qrCodeImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+      }
     }
   }
 

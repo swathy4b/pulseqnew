@@ -462,14 +462,14 @@
             <h1>Queue Ticket</h1>
             <p class="subtitle">Your place in line is confirmed</p>
         </div>
-
+        
         <div class="ticket-body">
             <div class="status-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
-
+            
             <div class="queue-number-big" id="queueNumber">--</div>
-
+            
             <div class="customer-details">
                 <div class="ticket-row">
                     <span class="ticket-label">Name</span>
@@ -582,7 +582,7 @@
         // Initialize timer
         let startTime = Date.now();
         const timerElement = document.getElementById('queueTimer');
-        
+
         function updateTimer() {
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
