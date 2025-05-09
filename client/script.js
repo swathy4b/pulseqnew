@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Detection socket for face detection
   const detectionSocket = io(BACKEND_URL);
 
+  // Queue socket for real-time queue updates
+  const queueSocket = io();
+
   // State
   let notificationCount = 0;
   let notifications = [];
@@ -835,6 +838,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // 2. Face Match Modal logic
   function showFaceMatchModal() {
     document.getElementById('faceMatchModal').style.display = 'flex';
+    // Replace suspect image with working placeholder
+    const suspectImg = document.querySelector('#faceMatchModal img');
+    if (suspectImg) {
+      suspectImg.src = 'https://placehold.co/120x120?text=Suspect';
+    }
   }
   document.getElementById('closeFaceMatchModal').onclick = function() {
     document.getElementById('faceMatchModal').style.display = 'none';
