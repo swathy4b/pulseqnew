@@ -274,4 +274,9 @@ router.get('/status', async (req, res) => {
   }
 });
 
+// Admin flow:
+// 1. Click "Serve Next" (POST /process-next): sets next person's status to 'processing'.
+// 2. Click "Complete" (POST /complete/:id): sets that person's status to 'completed' and removes from waiting list.
+// The UI should refresh after each action.
+
 module.exports = router;
