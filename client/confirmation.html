@@ -66,6 +66,10 @@
         // Get queue ID from URL
         const urlParams = new URLSearchParams(window.location.search);
         const queueId = urlParams.get('id');
+        if (!queueId || queueId === 'undefined') {
+            alert("No valid queue ID found. Redirecting to home...");
+            window.location.href = '/';
+        }
         
         // Initialize variables
         let timerInterval;

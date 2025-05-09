@@ -2,6 +2,7 @@ const express = require('express');
 const Queue = require('../models/Queue');
 const router = express.Router();
 const crypto = require('crypto');
+const mongoose = require('mongoose');
 
 // Generate a random secret key
 function generateSecretKey() {
@@ -73,6 +74,9 @@ router.post('/join', async (req, res) => {
 
 // Get individual queue status
 router.get('/status/:id', async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ message: 'Invalid queue ID' });
+  }
   try {
     const queueItem = await Queue.findById(req.params.id);
     if (!queueItem) {
