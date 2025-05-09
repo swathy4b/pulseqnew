@@ -364,16 +364,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// TEST: Emit evacuationAlert to all clients every 30 seconds
-setInterval(() => {
-    io.emit('evacuationAlert', {
-        message: '🚨 TEST: EMERGENCY EVACUATION! Please leave the area immediately!',
-        voiceMessage: 'Test evacuation! Please exit the building immediately.',
-        timestamp: new Date().toISOString()
-    });
-    console.log('Test evacuationAlert sent to all clients');
-}, 30000); // every 30 seconds
-
 // Start Node.js server
 http.listen(port, '0.0.0.0', () => {
     console.log(`Node.js server running on port ${port}`);
