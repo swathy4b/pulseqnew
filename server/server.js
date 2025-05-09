@@ -162,9 +162,11 @@ app.use((err, req, res, next) => {
 
 // Serve static files first
 app.use(express.static(clientDir, {
-  fallthrough: true, // Continue to next middleware if file not found
+  fallthrough: true,
   setHeaders: (res, path) => {
-    // Set cache headers for static files
+    if (path.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    }
     res.setHeader('Cache-Control', 'public, max-age=31536000');
   }
 }));

@@ -58,6 +58,7 @@ router.post('/join', async (req, res) => {
     res.json({
       success: true,
       data: {
+        id: queueItem._id,
         position,
         secretKey,
         queueNumber: nextQueueNumber,
@@ -75,51 +76,75 @@ router.get('/status/:id', async (req, res) => {
   try {
     const queueItem = await Queue.findById(req.params.id);
     if (!queueItem) {
-      return res.status(404).json({ message: 'Queue item not found' });
+      return res.status(404).json({ 
+        message: 'Queue item not found',
+        queueNumber: '--',
+        position: '--',
+        name: '--',
+        phone: '--',
+        joinTime: new Date(),
+        estimatedWaitMinutes: '--',
+        totalInQueue: 0
+      });
     }
 
-    let waitingItems;
+    // Calculate position based on priority
+    let position;
+    let totalInQueue = await Queue.countDocuments({ status: 'waiting' });
+
     if (queueItem.priority !== 'none') {
-      waitingItems = await Queue.find({
+      // For priority customers
+      const priorityQueue = await Queue.find({
         status: 'waiting',
         priority: queueItem.priority,
         joinTime: { $lte: queueItem.joinTime }
       }).sort({ joinTime: 1 });
+
+      position = priorityQueue.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
     } else {
-      waitingItems = await Queue.find({
+      // For regular customers
+      const regularQueue = await Queue.find({
         status: 'waiting',
         priority: 'none',
         joinTime: { $lte: queueItem.joinTime }
       }).sort({ joinTime: 1 });
+
       const priorityCount = await Queue.countDocuments({
         status: 'waiting',
         priority: { $ne: 'none' }
       });
-      const regularPosition = waitingItems.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
-      const position = priorityCount + regularPosition;
-      const estimatedWaitMinutes = position * 5;
-      return res.json({
-        ...queueItem.toObject(),
-        queueNumber: queueItem.queueNumber,
-        position,
-        estimatedWaitMinutes,
-        totalInQueue: await Queue.countDocuments({ status: 'waiting' })
-      });
+
+      position = priorityCount + regularQueue.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
     }
 
-    const position = waitingItems.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
+    // Calculate estimated wait time (5 minutes per person)
     const estimatedWaitMinutes = position * 5;
 
-    res.json({
+    const response = {
       ...queueItem.toObject(),
-      queueNumber: queueItem.queueNumber,
-      position,
-      estimatedWaitMinutes,
-      totalInQueue: await Queue.countDocuments({ status: 'waiting' })
-    });
+      position: position || '--',
+      estimatedWaitMinutes: estimatedWaitMinutes || '--',
+      totalInQueue,
+      queueNumber: queueItem.queueNumber || '--',
+      name: queueItem.name || '--',
+      phone: queueItem.phone || '--',
+      joinTime: queueItem.joinTime || new Date(),
+      status: queueItem.status || 'waiting'
+    };
+
+    res.json(response);
   } catch (err) {
     console.error('Queue status error:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ 
+      message: err.message,
+      queueNumber: '--',
+      position: '--',
+      name: '--',
+      phone: '--',
+      joinTime: new Date(),
+      estimatedWaitMinutes: '--',
+      totalInQueue: 0
+    });
   }
 });
 
@@ -144,7 +169,7 @@ router.post('/process-next', async (req, res) => {
       req.app.get('io').emit('queueUpdate', {
         type: 'process',
         item,
-        message: `Processing position ${item.position}. Secret key: ${item.secretKey}`
+        message: `Processing queue number ${item.queueNumber}. Secret key: ${item.secretKey}`
       });
 
       req.app.get('io').emit('personalNotification', {
@@ -165,13 +190,24 @@ router.post('/complete/:id', async (req, res) => {
   try {
     const completedItem = await Queue.findByIdAndUpdate(
       req.params.id,
-      { status: 'completed' },
+      { 
+        status: 'completed',
+        completedNotified: true
+      },
       { new: true }
     );
 
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('queueUpdate', await Queue.find());
+    if (completedItem) {
+      req.app.get('io').emit('queueUpdate', {
+        type: 'complete',
+        item: completedItem,
+        message: `Queue number ${completedItem.queueNumber} has been served.`
+      });
+
+      req.app.get('io').emit('personalNotification', {
+        secretKey: completedItem.secretKey,
+        message: `✅ Service completed! Thank you for using PulseQ.`
+      });
     }
 
     res.json(completedItem || {});
