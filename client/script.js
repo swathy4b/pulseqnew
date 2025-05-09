@@ -383,14 +383,29 @@ document.addEventListener('DOMContentLoaded', function() {
   // Process Next
   async function processNext() {
     try {
-      const response = await fetch('/api/queue/process', { method: 'POST' });
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const next = await response.json();
-      addNotification(next ? `Now serving ${next.name} (${next.queueNumber || 'N/A'})` : 'Queue is empty!', next ? 'info' : 'warning');
-      return next;
+      const response = await fetch('/api/queue/process-next', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+      
+      if (data.success) {
+        addNotification(`Now serving ${data.data.name} (${data.data.queueNumber || 'N/A'})`, 'info');
+        return data.data;
+      } else {
+        addNotification(data.error || 'Queue is empty!', 'warning');
+        return null;
+      }
     } catch (error) {
       console.error('Process next error:', error);
-      addNotification('Failed to process next', 'error');
+      addNotification(error.message || 'Failed to process next', 'error');
       return null;
     }
   }
