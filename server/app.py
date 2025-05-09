@@ -77,6 +77,7 @@ def generate_qr():
         img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode()
         
+        # Always include 'status': 'success' in the response
         return jsonify({
             'status': 'success',
             'qrCode': f'data:image/png;base64,{img_str}'
