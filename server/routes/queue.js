@@ -18,7 +18,6 @@ async function getNextPosition() {
 router.get('/', async (req, res) => {
   try {
     const queue = await Queue.find();
-    console.log('Fetching queue:', queue);
     res.json(queue);
   } catch (err) {
     console.error('Queue fetch error:', err);
@@ -33,13 +32,18 @@ router.post('/join', async (req, res) => {
     const position = await getNextPosition();
     const secretKey = generateSecretKey();
 
+    // Get the next queue number
+    const highestQueue = await Queue.findOne().sort({ queueNumber: -1 });
+    const nextQueueNumber = highestQueue ? highestQueue.queueNumber + 1 : 1;
+
     const queueItem = new Queue({
       name,
       phone,
       priority: priority || 'none',
       notification: notification !== false,
       secretKey,
-      position
+      position,
+      queueNumber: nextQueueNumber
     });
 
     await queueItem.save();
@@ -56,7 +60,8 @@ router.post('/join', async (req, res) => {
       data: {
         position,
         secretKey,
-        message: `You have been added to the queue. Your position is ${position} and your secret key is ${secretKey}. Please keep this key safe.`
+        queueNumber: nextQueueNumber,
+        message: `You have been added to the queue. Your position is ${position}, your queue number is ${nextQueueNumber}, and your secret key is ${secretKey}. Please keep this key safe.`
       }
     });
   } catch (error) {
@@ -69,11 +74,10 @@ router.post('/join', async (req, res) => {
 router.get('/status/:id', async (req, res) => {
   try {
     const queueItem = await Queue.findById(req.params.id);
-    
     if (!queueItem) {
       return res.status(404).json({ message: 'Queue item not found' });
     }
-    
+
     let waitingItems;
     if (queueItem.priority !== 'none') {
       waitingItems = await Queue.find({
@@ -96,18 +100,22 @@ router.get('/status/:id', async (req, res) => {
       const estimatedWaitMinutes = position * 5;
       return res.json({
         ...queueItem.toObject(),
+        queueNumber: queueItem.queueNumber,
         position,
-        estimatedWaitMinutes
+        estimatedWaitMinutes,
+        totalInQueue: await Queue.countDocuments({ status: 'waiting' })
       });
     }
-    
+
     const position = waitingItems.findIndex(item => item._id.toString() === queueItem._id.toString()) + 1;
     const estimatedWaitMinutes = position * 5;
-    
+
     res.json({
       ...queueItem.toObject(),
+      queueNumber: queueItem.queueNumber,
       position,
-      estimatedWaitMinutes
+      estimatedWaitMinutes,
+      totalInQueue: await Queue.countDocuments({ status: 'waiting' })
     });
   } catch (err) {
     console.error('Queue status error:', err);
@@ -123,7 +131,7 @@ router.post('/process-next', async (req, res) => {
       { status: 'processing' },
       { new: true, sort: { joinTime: 1 } }
     );
-    
+
     if (!item) {
       item = await Queue.findOneAndUpdate(
         { status: 'waiting' },
@@ -131,16 +139,14 @@ router.post('/process-next', async (req, res) => {
         { new: true, sort: { joinTime: 1 } }
       );
     }
-    
+
     if (item) {
-      // Emit notification to all clients
       req.app.get('io').emit('queueUpdate', {
         type: 'process',
         item,
         message: `Processing position ${item.position}. Secret key: ${item.secretKey}`
       });
 
-      // Send specific notification to the person being processed
       req.app.get('io').emit('personalNotification', {
         secretKey: item.secretKey,
         message: `It's your turn! Please proceed to the counter.`
@@ -162,13 +168,12 @@ router.post('/complete/:id', async (req, res) => {
       { status: 'completed' },
       { new: true }
     );
-    
-    console.log('Completed:', completedItem);
+
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', await Queue.find());
     }
-    
+
     res.json(completedItem || {});
   } catch (err) {
     console.error('Complete error:', err);
@@ -180,12 +185,10 @@ router.post('/complete/:id', async (req, res) => {
 router.delete('/clear', async (req, res) => {
   try {
     await Queue.deleteMany({});
-    console.log('Queue cleared');
     const io = req.app.get('io');
     if (io) {
       io.emit('queueUpdate', []);
     }
-    
     res.json({ message: 'Queue cleared' });
   } catch (err) {
     console.error('Clear queue error:', err);
@@ -197,8 +200,7 @@ router.delete('/clear', async (req, res) => {
 router.post('/evacuate', async (req, res) => {
   try {
     const waitingItems = await Queue.find({ status: 'waiting' });
-    
-    // Send evacuation notification to all waiting people
+
     waitingItems.forEach(item => {
       if (item.notification) {
         req.app.get('io').emit('personalNotification', {
@@ -208,10 +210,8 @@ router.post('/evacuate', async (req, res) => {
       }
     });
 
-    // Clear the queue
     await Queue.deleteMany({});
-    
-    // Emit notification to all clients
+
     req.app.get('io').emit('queueUpdate', {
       type: 'evacuate',
       message: 'Queue has been evacuated due to emergency'
