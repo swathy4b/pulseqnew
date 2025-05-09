@@ -4,7 +4,173 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Queue Confirmation - PulseQ</title>
-    <link rel="stylesheet" href="confirmation.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #6366f1;
+            --accent: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --bg: #f3f4f6;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text);
+        }
+        .ticket-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 480px;
+            overflow: hidden;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+        .ticket-header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 32px 24px;
+            text-align: center;
+            position: relative;
+        }
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            animation: pulse 2s infinite;
+        }
+        .ticket-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .ticket-body {
+            padding: 32px 24px;
+        }
+        .status-icon {
+            text-align: center;
+            font-size: 3rem;
+            color: var(--success);
+            margin-bottom: 24px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        .queue-number-big {
+            font-size: 4rem;
+            font-weight: 800;
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 32px;
+            text-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+            animation: scaleIn 0.5s ease-out;
+        }
+        .customer-details {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .ticket-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .ticket-row:last-child { border-bottom: none; }
+        .ticket-label { color: var(--text-light); font-size: 1rem; }
+        .ticket-value { font-weight: 600; color: var(--text); font-size: 1.1rem; }
+        .queue-status {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .progress-container {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            height: 8px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            height: 100%;
+            width: 0;
+            transition: width 0.3s ease-out;
+        }
+        .queue-timer {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 24px;
+            font-family: monospace;
+        }
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .notification {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-out;
+        }
+        .notification.show { transform: translateX(0); }
+        .notification i { color: var(--primary); font-size: 1.2rem; }
+        .notification-text { color: var(--text); font-weight: 500; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @media (max-width: 480px) {
+            .ticket-card { border-radius: 16px; }
+            .ticket-header { padding: 24px 16px; }
+            .ticket-body { padding: 24px 16px; }
+            .queue-number-big { font-size: 3rem; }
+            .ticket-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .ticket-value { font-size: 1rem; }
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -14,14 +180,11 @@
             <h1>PulseQ</h1>
             <p class="subtitle">Your queue confirmation</p>
         </div>
-        
         <div class="ticket-body">
             <div class="status-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
-            
             <div class="queue-number-big" id="queueNumber">--</div>
-            
             <div class="customer-details">
                 <div class="ticket-row">
                     <span class="ticket-label">Name:</span>
@@ -32,28 +195,29 @@
                     <span class="ticket-value" id="userPhone">--</span>
                 </div>
                 <div class="ticket-row">
+                    <span class="ticket-label">Queue Number:</span>
+                    <span class="ticket-value" id="queueNumberSmall">--</span>
+                </div>
+                <div class="ticket-row">
                     <span class="ticket-label">Joined At:</span>
                     <span class="ticket-value" id="joinTime">--</span>
                 </div>
             </div>
-
             <div class="queue-status">
                 <div class="ticket-row">
                     <span class="ticket-label">Your Position:</span>
                     <span class="ticket-value" id="positionInfo">--</span>
                 </div>
                 <div class="ticket-row">
-                    <span class="ticket-label">Wait Time:</span>
+                    <span class="ticket-label">Estimated Wait:</span>
                     <span class="ticket-value" id="waitTime">--</span>
                 </div>
                 <div class="progress-container">
                     <div class="progress-bar" id="progressBar"></div>
                 </div>
             </div>
-
             <div class="queue-timer" id="queueTimer">00:00:00</div>
         </div>
-
         <div class="notification-container">
             <div id="queueNotification" class="notification">
                 <i class="fas fa-bell"></i>
@@ -62,7 +226,6 @@
         </div>
         <div id="errorMessage" style="color:red; text-align:center; margin-top:20px; display:none;"></div>
     </div>
-
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const queueId = urlParams.get('id');
@@ -75,20 +238,17 @@
         let startTime = new Date();
         let isProcessing = false;
         let isCompleted = false;
-
         function showError(msg) {
             const errorDiv = document.getElementById('errorMessage');
             errorDiv.textContent = msg;
             errorDiv.style.display = 'block';
         }
-
         async function fetchQueueStatus() {
             if (!queueId || isCompleted) return;
             try {
                 const response = await fetch(`/api/queue/status/${queueId}`);
                 if (!response.ok) throw new Error(`Error: ${response.status}`);
                 const data = await response.json();
-                console.log('Fetched queue data:', data); // Debug log
                 if (!data.name || !data.phone) {
                     showError('Could not load your queue details. Please try again or re-register.');
                     return;
@@ -107,16 +267,15 @@
                     updateProgressBar(data.position, data.totalInQueue);
                 }
             } catch (error) {
-                console.error('Error fetching queue status:', error);
                 showError('Could not load your queue details. Please try again or re-register.');
             }
         }
-
         function updateUI(data) {
             document.getElementById('queueNumber').textContent = data.queueNumber || '--';
+            document.getElementById('queueNumberSmall').textContent = data.queueNumber || '--';
             document.getElementById('userName').textContent = data.name || '--';
             document.getElementById('userPhone').textContent = data.phone || '--';
-            document.getElementById('joinTime').textContent = data.joinTime ? formatTime(new Date(data.joinTime)) : '--';
+            document.getElementById('joinTime').textContent = data.joinTime ? formatDateTime(new Date(data.joinTime)) : '--';
             document.getElementById('positionInfo').textContent = data.position || '--';
             document.getElementById('waitTime').textContent = data.estimatedWaitMinutes ? `${data.estimatedWaitMinutes} min` : '--';
             const statusIcon = document.querySelector('.status-icon i');
@@ -157,9 +316,23 @@
             const seconds = Math.floor((diff % 60000) / 1000);
             timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
-        // Notification and WebSocket logic remains unchanged...
-        // ...
-        // Initialize
+        function formatDateTime(date) {
+            if (!(date instanceof Date) || isNaN(date)) return '--';
+            return date.toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        function showNotification(message) {
+            const notification = document.getElementById('queueNotification');
+            if (!notification) return;
+            const textElement = notification.querySelector('.notification-text');
+            if (!textElement) return;
+            textElement.textContent = message;
+            notification.style.display = 'flex';
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => { notification.style.display = 'none'; }, 300);
+            }, 5000);
+        }
         if (queueId) {
             timerInterval = setInterval(updateTimer, 1000);
             fetchQueueStatus();
