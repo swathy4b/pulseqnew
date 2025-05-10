@@ -5,6 +5,7 @@ nixPkgs = [
   "python39Packages.dlib",
   "python39Packages.pip",
   "python39Packages.virtualenv",
+  "python39Packages.setuptools",
   "gcc",
   "pkg-config",
   "mesa",
@@ -16,6 +17,9 @@ cmds = [
   "cd PulseQ",
   "python3 -m venv venv",
   ". venv/bin/activate",
+  "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
+  "python get-pip.py",
+  "python -m pip install --upgrade pip",
   "python -m pip install -r requirements.txt"
 ]
 
