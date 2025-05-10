@@ -1,5 +1,12 @@
 [phases.setup]
-nixPkgs = ["python39", "cmake", "gcc", "pkg-config", "libgl1-mesa-glx", "libglib2.0-0"]
+nixPkgs = [
+  "python39",
+  "cmake",
+  "gcc",
+  "pkg-config",
+  "libgl1-mesa-glx",
+  "libglib2.0-0"
+]
 
 [phases.install]
 cmds = [
