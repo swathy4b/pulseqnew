@@ -15,19 +15,23 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev \
     libgtk-3-dev \
     libboost-python-dev \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy the entire repository including .git directory
-COPY . .
+# Create server directory
+RUN mkdir -p server
 
-# Initialize and update submodules
-RUN git submodule update --init --recursive
+# Copy server files
+COPY PulseQ/server/app.py server/
+COPY PulseQ/server/analytics_history.json server/
+COPY PulseQ/server/templates server/templates/
+COPY PulseQ/server/static server/static/
+COPY PulseQ/server/routes server/routes/
+COPY PulseQ/server/models server/models/
 
-# Copy requirements first for better caching
+# Copy requirements
 COPY PulseQ/requirements.txt .
 
 # Install Python dependencies
@@ -37,13 +41,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir dlib==19.22.0 && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the application
-COPY PulseQ/server/ server/
-
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5000
-ENV FLASK_APP=PulseQ/server/app.py
+ENV FLASK_APP=server/app.py
 ENV FLASK_ENV=production
 ENV SECRET_KEY=crowd-detection-secret
 
