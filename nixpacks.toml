@@ -4,9 +4,15 @@ nixPkgs = [
   "python39Packages.numpy",
   "python39Packages.dlib",
   "python39Packages.pip",
-  "python39Packages.virtualenv",
   "python39Packages.setuptools",
   "python39Packages.wheel",
+  "python39Packages.flask",
+  "python39Packages.flask-socketio",
+  "python39Packages.flask-cors",
+  "python39Packages.eventlet",
+  "python39Packages.mediapipe",
+  "python39Packages.opencv4",
+  "python39Packages.qrcode",
   "gcc",
   "pkg-config",
   "mesa",
@@ -15,12 +21,8 @@ nixPkgs = [
 
 [phases.install]
 cmds = [
-  "cd PulseQ",
-  "python3 -m venv venv --system-site-packages",
-  ". venv/bin/activate",
-  "python -m ensurepip --upgrade",
-  "python -m pip install --no-cache-dir -r requirements.txt"
+  "cd PulseQ"
 ]
 
 [start]
-cmd = "cd PulseQ && . venv/bin/activate && python server/app.py" 
+cmd = "cd PulseQ && python server/app.py" 
