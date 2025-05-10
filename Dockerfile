@@ -26,7 +26,7 @@ WORKDIR /app
 COPY PulseQ .
 
 # Install Node.js dependencies
-RUN cd server && npm install
+RUN npm install
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -52,7 +52,7 @@ RUN echo '#!/bin/bash\n\
 # Start Python server in background\n\
 python server/app.py &\n\
 # Start Node.js server\n\
-cd server && node server.js\n\
+node server/server.js\n\
 ' > start.sh && chmod +x start.sh
 
 # Start both servers
