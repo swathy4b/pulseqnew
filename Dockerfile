@@ -1,7 +1,8 @@
-FROM python:3.10-slim
+FROM python:3.10-bullseye
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies in a single layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
     pkg-config \
@@ -11,7 +12,8 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libdlib-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Set working directory
 WORKDIR /app
