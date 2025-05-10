@@ -6,6 +6,7 @@ nixPkgs = [
   "python39Packages.pip",
   "python39Packages.virtualenv",
   "python39Packages.setuptools",
+  "python39Packages.wheel",
   "gcc",
   "pkg-config",
   "mesa",
@@ -15,12 +16,10 @@ nixPkgs = [
 [phases.install]
 cmds = [
   "cd PulseQ",
-  "python3 -m venv venv",
+  "python3 -m venv venv --system-site-packages",
   ". venv/bin/activate",
-  "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
-  "python get-pip.py",
-  "python -m pip install --upgrade pip",
-  "python -m pip install -r requirements.txt"
+  "python -m ensurepip --upgrade",
+  "python -m pip install --no-cache-dir -r requirements.txt"
 ]
 
 [start]
