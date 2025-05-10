@@ -22,8 +22,9 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy package files first
-COPY PulseQ/package*.json ./
+# Copy package files first and verify
+COPY PulseQ/package.json PulseQ/package-lock.json ./
+RUN ls -la && cat package.json
 
 # Install Node.js dependencies
 RUN npm install
