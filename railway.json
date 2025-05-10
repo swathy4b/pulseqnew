@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "PulseQ/Dockerfile.backend"
+    "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "python server/app.py",
+    "startCommand": "cd PulseQ && python server/app.py",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
