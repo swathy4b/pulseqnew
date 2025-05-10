@@ -15,10 +15,17 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev \
     libgtk-3-dev \
     libboost-python-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
+
+# Copy the entire repository including .git directory
+COPY . .
+
+# Initialize and update submodules
+RUN git submodule update --init --recursive
 
 # Copy requirements first for better caching
 COPY PulseQ/requirements.txt .
