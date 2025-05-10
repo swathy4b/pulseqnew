@@ -5,7 +5,7 @@ nixPkgs = [
   "gcc",
   "pkg-config",
   "libgl1-mesa-glx",
-  "libglib2.0-0"
+  "glib"
 ]
 
 [phases.install]
