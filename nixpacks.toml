@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["python39", "cmake", "gcc", "pkg-config", "libgl1-mesa-glx", "libglib2.0-0"]
+
+[phases.install]
+cmds = [
+  "cd PulseQ",
+  "pip install --upgrade pip",
+  "pip install numpy cmake",
+  "pip install dlib==19.22.0",
+  "pip install -r requirements.txt"
+]
+
+[start]
+cmd = "cd PulseQ && python server/app.py" 
