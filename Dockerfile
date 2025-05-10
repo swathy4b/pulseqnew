@@ -22,11 +22,19 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy the entire PulseQ directory
-COPY PulseQ .
+# Copy package files first
+COPY PulseQ/package.json .
+COPY PulseQ/package-lock.json .
+
+# Verify package.json exists and show its contents
+RUN ls -la && cat package.json
 
 # Install Node.js dependencies
 RUN npm install
+
+# Copy the rest of the application
+COPY PulseQ/server ./server
+COPY PulseQ/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
