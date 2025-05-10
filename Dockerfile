@@ -23,7 +23,7 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY PulseQ/requirements.txt .
 
-# Install Python packages
+# Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir numpy && \
     pip install --no-cache-dir cmake==3.25.0 && \
@@ -36,6 +36,9 @@ COPY PulseQ/server/ server/
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5000
+ENV FLASK_APP=PulseQ/server/app.py
+ENV FLASK_ENV=production
+ENV SECRET_KEY=crowd-detection-secret
 
 # Expose port
 EXPOSE 5000
