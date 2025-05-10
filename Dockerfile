@@ -28,7 +28,7 @@ COPY PulseQ/ .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir numpy && \
     pip install --no-cache-dir cmake==3.25.0 && \
-    pip install --no-cache-dir dlib-binary==19.22.0 && \
+    pip install --no-cache-dir dlib-binary==19.21.99 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Expose port
