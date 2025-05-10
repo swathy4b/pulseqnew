@@ -22,32 +22,24 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Create necessary directories
-RUN mkdir -p server
-
-# Copy server files
-COPY PulseQ/server/app.py server/
-COPY PulseQ/server/server.js server/
-COPY PulseQ/server/templates server/templates/
-COPY PulseQ/server/static server/static/
-COPY PulseQ/server/routes server/routes/
-COPY PulseQ/server/models server/models/
-COPY PulseQ/server/analytics_history.json server/
-
-# Copy package files
-COPY PulseQ/package.json .
-COPY PulseQ/package-lock.json .
-
-# Verify package.json exists and show its contents
-RUN ls -la && cat package.json
+# Copy package files first for better caching
+COPY PulseQ/package*.json ./
 
 # Install Node.js dependencies
 RUN npm install
 
-# Copy requirements
-COPY PulseQ/requirements.txt .
+# Create server directory and copy server files
+RUN mkdir -p server
+COPY PulseQ/server/app.py server/
+COPY PulseQ/server/server.js server/
+COPY PulseQ/server/analytics_history.json server/
+COPY PulseQ/server/templates server/templates/
+COPY PulseQ/server/static server/static/
+COPY PulseQ/server/routes server/routes/
+COPY PulseQ/server/models server/models/
 
-# Install Python dependencies
+# Copy requirements and install Python dependencies
+COPY PulseQ/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir numpy && \
     pip install --no-cache-dir cmake==3.25.0 && \
@@ -55,24 +47,17 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
 ENV FLASK_APP=server/app.py
 ENV FLASK_ENV=production
-ENV SECRET_KEY=crowd-detection-secret
-ENV NODE_ENV=production
+ENV SECRET_KEY=your-secret-key-here
+ENV PORT=5000
 
 # Expose ports
 EXPOSE 5000
 EXPOSE 10000
 
 # Create start script
-RUN echo '#!/bin/bash\n\
-# Start Python server in background\n\
-python server/app.py &\n\
-# Start Node.js server\n\
-node server/server.js\n\
-' > start.sh && chmod +x start.sh
+RUN echo '#!/bin/bash\npython server/app.py &\nnode server/server.js\n' > start.sh && chmod +x start.sh
 
-# Start both servers
+# Start the application
 CMD ["./start.sh"] 
