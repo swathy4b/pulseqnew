@@ -4,7 +4,7 @@ nixPkgs = [
   "cmake",
   "gcc",
   "pkg-config",
-  "libgl1-mesa-glx",
+  "mesa",
   "glib"
 ]
 
