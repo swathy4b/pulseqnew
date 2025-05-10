@@ -12,14 +12,11 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY PulseQ/requirements.txt .
+# Copy the entire PulseQ directory
+COPY PulseQ/ .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application
-COPY PulseQ/ .
 
 # Expose the port the app runs on
 EXPOSE 5000
