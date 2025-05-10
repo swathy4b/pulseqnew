@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
 
-  // Use Node.js proxy for detection API
-  const BACKEND_URL = '/detection';
+  // Set your backend URL here. Change this to your deployed backend URL when deploying.
+  const BACKEND_URL = window.BACKEND_URL || "http://localhost:5000";
 
   // Socket connections
   const socket = io({
@@ -85,10 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
   function startLiveFeedRefresh() {
     if (liveFeedInterval) clearInterval(liveFeedInterval);
     // Set initial feed immediately
-    liveFeedImg.src = `${BACKEND_URL}/feed?t=${Date.now()}`;
+    const liveFeedImg = document.getElementById('liveFeed');
+    if (liveFeedImg) liveFeedImg.src = `/feed?t=${Date.now()}`;
     liveFeedInterval = setInterval(async () => {
       if (liveMonitoringModal.style.display === 'flex' && detectionRunning) {
-        liveFeedImg.src = `${BACKEND_URL}/feed?t=${Date.now()}`;
+        if (liveFeedImg) liveFeedImg.src = `/feed?t=${Date.now()}`;
         // Fetch current count and status from backend and update UI
         try {
           const response = await fetch(`${BACKEND_URL}/status`);
@@ -167,10 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch QR Code
   async function fetchQRCode() {
     try {
-      const response = await fetch('/api/queue/qr');
+      const response = await fetch(`${BACKEND_URL}/api/queue/qr`);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       if (data.status === 'success' && data.qrCode) {
+        // Always update only the QR code image
         const qrCodeImg = document.getElementById('qrCode');
         if (qrCodeImg) {
           qrCodeImg.src = data.qrCode;
@@ -181,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (error) {
       console.error('Error fetching QR code:', error);
-      // Show error state in QR code
+      // Show error state in QR code only
       const qrCodeImg = document.getElementById('qrCode');
       if (qrCodeImg) {
         qrCodeImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
@@ -683,7 +685,7 @@ document.addEventListener('DOMContentLoaded', function() {
   startBtn.addEventListener('click', async () => {
     await startDetection();
     // After starting, update the live feed
-    liveFeedImg.src = `${BACKEND_URL}/feed?t=${Date.now()}`;
+    liveFeedImg.src = `/feed?t=${Date.now()}`;
   });
   
   stopBtn.addEventListener('click', async () => {
@@ -1114,7 +1116,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   `;
   document.head.appendChild(style);
-
-  // Call this when initializing admin interface
-  addEvacuationButton();
 });

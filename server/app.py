@@ -18,6 +18,7 @@ import socket
 import sys
 import qrcode
 import io
+from flask_cors import CORS
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -31,6 +32,7 @@ templates_dir = os.path.join(server_dir, 'templates')
 app = Flask(__name__, 
             template_folder=templates_dir,
             static_folder=os.path.join(server_dir, 'static'))
+CORS(app)
 app.config['SECRET_KEY'] = 'crowd-detection-secret'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
