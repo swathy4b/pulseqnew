@@ -460,6 +460,14 @@ def get_status():
         'timestamp': datetime.datetime.now().isoformat()
     })
 
+@app.route('/health')
+def health_check():
+    return jsonify({
+        'status': 'success',
+        'message': 'Server is healthy',
+        'timestamp': datetime.datetime.now().isoformat()
+    })
+
 @app.route('/static/<path:path>')
 def serve_static(path):
     """Serve static files"""

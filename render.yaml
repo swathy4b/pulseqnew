@@ -1,15 +1,25 @@
 services:
   - type: web
-    name: pulseq
+    name: pulseq-backend
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.backend
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
+    healthCheckPath: /health
+
+  - type: static
+    name: pulseq-frontend
+    buildCommand: cd client && npm install
+    staticPublishPath: client
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000
-      - key: MONGODB_URI
-        value: mongodb+srv://smartqueue:hMN5zLUlWH2JxBRR@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
-      - key: FLASK_ENV
-        value: production
-    healthCheckPath: / 
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: https://pulseq-backend.onrender.com 
