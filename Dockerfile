@@ -20,15 +20,18 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy the entire PulseQ directory
-COPY PulseQ/ .
+# Copy requirements first for better caching
+COPY PulseQ/requirements.txt /app/requirements.txt
 
 # Install Python packages
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir numpy && \
     pip install --no-cache-dir cmake==3.25.0 && \
     pip install --no-cache-dir dlib==19.22.0 && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r /app/requirements.txt
+
+# Copy the rest of the application
+COPY PulseQ/server/ /app/server/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
