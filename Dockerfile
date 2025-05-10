@@ -21,8 +21,8 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy the application files
-COPY . /app/
+# Copy requirements first for better caching
+COPY PulseQ/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
@@ -30,6 +30,9 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir cmake==3.25.0 && \
     pip install --no-cache-dir dlib && \
     pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
+COPY PulseQ/server/ server/
 
 # Expose port
 EXPOSE 5000
