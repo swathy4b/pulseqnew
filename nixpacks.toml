@@ -2,11 +2,9 @@
 nixPkgs = [
   "python39",
   "python39Packages.numpy",
-  "python39Packages.cmake",
   "python39Packages.dlib",
   "python39Packages.pip",
   "python39Packages.virtualenv",
-  "cmake",
   "gcc",
   "pkg-config",
   "mesa",
