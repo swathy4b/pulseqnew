@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-# Install system dependencies
+# Install all dependencies in one layer to reduce image size
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -15,7 +15,6 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev \
     libgtk-3-dev \
     libboost-python-dev \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -24,18 +23,22 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY PulseQ/requirements.txt .
 
-# Install Python dependencies
-RUN pip install --upgrade pip && \
+# Install Python packages
+RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir numpy && \
     pip install --no-cache-dir cmake==3.25.0 && \
-    pip install --no-cache-dir dlib && \
+    pip install --no-cache-dir dlib==19.22.0 && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy application files
 COPY PulseQ/server/ server/
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PORT=5000
 
 # Expose port
 EXPOSE 5000
 
-# Start the Python server
+# Start the application
 CMD ["python", "server/app.py"] 
