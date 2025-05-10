@@ -21,6 +21,13 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
+# Initialize and update submodule
+COPY .gitmodules .
+RUN git init && \
+    git submodule init && \
+    git submodule add https://github.com/swathy4b/pulseqnew.git PulseQ && \
+    git submodule update --init --recursive
+
 # Copy requirements first for better caching
 COPY PulseQ/requirements.txt .
 
