@@ -11,10 +11,10 @@ nixPkgs = [
 [phases.install]
 cmds = [
   "cd PulseQ",
-  "pip install --upgrade pip",
-  "pip install numpy cmake",
-  "pip install dlib==19.22.0",
-  "pip install -r requirements.txt"
+  "python3 -m pip install --upgrade pip",
+  "python3 -m pip install numpy cmake",
+  "python3 -m pip install dlib==19.22.0",
+  "python3 -m pip install -r requirements.txt"
 ]
 
 [start]
