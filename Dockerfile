@@ -16,10 +16,16 @@ RUN apt-get update && apt-get install -y \
     libgtk-3-dev \
     libboost-python-dev \
     wget \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
+
+# Initialize and update submodules
+COPY .git ./.git
+COPY .gitmodules ./.gitmodules
+RUN git submodule update --init --recursive
 
 # Copy requirements first for better caching
 COPY PulseQ/requirements.txt /app/requirements.txt
