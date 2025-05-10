@@ -10,18 +10,20 @@ nixPkgs = [
   "python39Packages.flask-socketio",
   "python39Packages.flask-cors",
   "python39Packages.eventlet",
-  "python39Packages.mediapipe",
   "python39Packages.opencv4",
   "python39Packages.qrcode",
   "gcc",
   "pkg-config",
   "mesa",
-  "glib"
+  "glib",
+  "cmake",
+  "protobuf"
 ]
 
 [phases.install]
 cmds = [
-  "cd PulseQ"
+  "cd PulseQ",
+  "python3 -m pip install --no-cache-dir mediapipe"
 ]
 
 [start]
