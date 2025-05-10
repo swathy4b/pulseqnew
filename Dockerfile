@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
     libatlas-base-dev \
     libgtk-3-dev \
     libboost-python-dev \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -26,8 +27,8 @@ COPY PulseQ/ .
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir numpy && \
-    pip install --no-cache-dir cmake && \
-    pip install --no-cache-dir dlib==19.22.0 && \
+    pip install --no-cache-dir cmake==3.25.0 && \
+    pip install --no-cache-dir dlib-binary==19.22.0 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Expose port
