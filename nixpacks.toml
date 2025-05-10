@@ -1,6 +1,9 @@
 [phases.setup]
 nixPkgs = [
   "python39",
+  "python39Packages.numpy",
+  "python39Packages.cmake",
+  "python39Packages.dlib",
   "python39Packages.pip",
   "python39Packages.virtualenv",
   "cmake",
@@ -15,9 +18,6 @@ cmds = [
   "cd PulseQ",
   "python3 -m venv venv",
   ". venv/bin/activate",
-  "python -m pip install --upgrade pip",
-  "python -m pip install numpy cmake",
-  "python -m pip install dlib==19.22.0",
   "python -m pip install -r requirements.txt"
 ]
 
