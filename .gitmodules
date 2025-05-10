@@ -1,0 +1,3 @@
+[submodule "PulseQ"]
+	path = PulseQ
+	url = https://github.com/swathy4b/pulseqnew.git
