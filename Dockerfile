@@ -22,12 +22,10 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy package files first and verify
-COPY package.json package-lock.json ./
-RUN ls -la && cat package.json
-
-# Install Node.js dependencies
-RUN npm install
+# Copy package.json if it exists and install dependencies
+COPY package.json ./
+RUN if [ -f "package-lock.json" ]; then cp package-lock.json ./; fi
+RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application
 COPY . .
