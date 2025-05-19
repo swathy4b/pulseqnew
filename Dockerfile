@@ -50,7 +50,7 @@ EXPOSE 5000
 EXPOSE 10000
 
 # Create start script
-RUN echo '#!/bin/bash\npython server/app.py &\nnode server/server.js\n' > start.sh && chmod +x start.sh
+RUN echo '#!/bin/bash\npython server/app.py &\nnode server/server.js' > start.sh && chmod +x start.sh
 
 # Start the application
-CMD ["./start.sh"] 
+CMD ["bash", "start.sh"]
