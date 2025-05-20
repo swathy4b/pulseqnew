@@ -21,9 +21,8 @@ RUN pip install --no-cache-dir \
 WORKDIR /app
 
 # Copy package files first and verify
-COPY ../package.json ../package-lock.json ./
+COPY package.json package-lock.json ./
 RUN ls -la && cat package.json
-RUN if [ -f "package-lock.json" ]; then cp package-lock.json ./; fi
 RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application
