@@ -13,9 +13,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install pre-built face recognition packages
 RUN pip install --no-cache-dir \
-    face-recognition==1.3.0 \
     face-recognition-models==0.3.0 \
-    dlib==19.22.0
+    numpy \
+    Pillow \
+    Click && \
+    # Install dlib from source
+    git clone https://github.com/davisking/dlib.git && \
+    cd dlib && \
+    python3 setup.py install && \
+    cd .. && \
+    rm -rf dlib && \
+    # Install face-recognition
+    pip install --no-cache-dir face-recognition==1.3.0
 
 # Set working directory
 WORKDIR /app
