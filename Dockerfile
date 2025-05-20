@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     nodejs \
     npm \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pre-built face recognition packages
