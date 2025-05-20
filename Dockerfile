@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs \
     npm \
     git \
+    cmake \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pre-built face recognition packages
