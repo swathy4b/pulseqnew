@@ -31,9 +31,7 @@ EXPOSE 5000
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
-ENV SECRET_KEY=3456789888
 ENV PORT=5000
-ENV MONGODB_URI=mongodb+srv://swaathy:MveSJIZ5tddtg7n7@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
 
-# Start the application
-CMD ["python", "server/app.py"]
+# Command to run the application
+CMD ["python", "app.py"]

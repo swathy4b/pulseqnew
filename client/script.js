@@ -47,8 +47,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const startBtn = document.getElementById('startBtn');
   const stopBtn = document.getElementById('stopBtn');
 
-  // Set your backend URL here. Change this to your deployed backend URL when deploying.
-  const BACKEND_URL = window.BACKEND_URL || "http://localhost:5000";
+  // Backend URL - will be set based on environment
+  const BACKEND_URL = window.BACKEND_URL || process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
+  
+  // Set the backend URL for the window object if not already set
+  window.BACKEND_URL = BACKEND_URL;
 
   // Socket connections
   const socket = io({

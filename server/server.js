@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const QRCode = require('qrcode');
@@ -10,15 +11,28 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const { spawn } = require('child_process');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 const bodyParser = require('body-parser');
 const httpProxy = require('http-proxy');
 const fs = require('fs');
 const os = require('os');
 
-// Use different ports for Node.js and Python servers
-const port = process.env.PORT || 10000;  // Node.js server port
-const pythonPort = 5000;  // Python server port
+// Server configuration
+const port = process.env.PORT || 10000;
+const pythonPort = process.env.PYTHON_PORT || 5000;
+const pythonServerUrl = process.env.PYTHON_SERVER_URL || `http://localhost:${pythonPort}`;
+
+// Log configuration
+console.log('Server configuration:');
+console.log(`- Node.js Port: ${port}`);
+console.log(`- Python Server: ${pythonServerUrl}`);
+console.log(`- NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smartqueue';
@@ -62,13 +76,22 @@ function startPythonServer() {
     }
 
     console.log('Starting Python server...');
+    
+    // In Docker, the Python server is already running as a separate service
+    if (process.env.NODE_ENV === 'production') {
+        console.log('In production mode, Python server should be running as a separate container');
+        return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
         pythonProcess = spawn('python', ['server/app.py'], {
-            stdio: 'pipe',
+            stdio: 'inherit',
             env: {
                 ...process.env,
                 PYTHONUNBUFFERED: '1',
-                PORT: pythonPort  // Set Python server port
+                FLASK_APP: 'server/app.py',
+                FLASK_ENV: process.env.NODE_ENV || 'development',
+                PORT: pythonPort
             }
         });
 

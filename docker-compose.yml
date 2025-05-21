@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  node-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    ports:
+      - "10000:10000"
+    environment:
+      - NODE_ENV=production
+      - PORT=10000
+      - PYTHON_SERVER_URL=http://python-server:5000
+    depends_on:
+      - python-server
+      - mongo
+    restart: unless-stopped
+    volumes:
+      - ./server:/app/server
+      - /app/server/node_modules
+
+  python-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=server/app.py
+      - FLASK_ENV=production
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    volumes:
+      - ./server:/app/server
+      - /app/server/__pycache__
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:10000
+    depends_on:
+      - node-server
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
