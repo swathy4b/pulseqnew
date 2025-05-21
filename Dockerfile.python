@@ -2,7 +2,7 @@
 FROM python:3.10-slim
 
 # Set working directory
-WORKDIR /app
+WORKDIR /app/server
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,7 +30,7 @@ RUN chmod +x /app/start-python.sh
 EXPOSE 5000
 
 # Set environment variables
-ENV FLASK_APP=server/app.py
+ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PORT=5000
 
