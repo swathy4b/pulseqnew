@@ -27,24 +27,8 @@ RUN cd client && npm install
 COPY server/ ./server/
 COPY client/ ./client/
 
-# Install nginx for serving static files
-RUN apt-get update && apt-get install -y nginx
-
-# Copy nginx config
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose ports
-EXPOSE 80
+# Expose port
 EXPOSE 5000
-
-# Start both nginx and Flask server
-CMD ["sh", "-c", "python server/server.py & nginx -g 'daemon off;'"], "TargetLintErrorIds": []
-
-# Copy requirements.txt first
-COPY requirements.txt ./
-
-# Install remaining Python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables
