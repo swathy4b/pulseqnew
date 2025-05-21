@@ -1,0 +1,13 @@
+{
+  "name": "pulseq-client",
+  "version": "1.0.0",
+  "description": "Pulseq Queue Management System Client",
+  "main": "script.js",
+  "scripts": {
+    "start": "node index.html"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.2",
+    "bootstrap": "^5.3.0"
+  }
+}
