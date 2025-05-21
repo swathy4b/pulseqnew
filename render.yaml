@@ -6,7 +6,7 @@ services:
     dockerfilePath: ./Dockerfile.python
     envVars:
       - key: FLASK_APP
-        value: server/app.py
+        value: app.py
       - key: FLASK_ENV
         value: production
       - key: PORT
@@ -21,6 +21,7 @@ services:
         value: '1'
     healthCheckPath: /health
     autoDeploy: true
+    workingDirectory: /app/server
 
   # Node.js API Service
   - type: web
