@@ -1,19 +1,19 @@
 #!/bin/bash
 
 # Print current directory and contents for debugging
+echo "Current directory:"
 pwd
-ls -la
+echo "\nContents of /app:"
+ls -la /app
+echo "\nContents of /app/server:"
+ls -la /app/server
 
-# Change to the server directory
-cd /app/server || { echo "Failed to change to /app/server"; exit 1; }
-
-# Print server directory contents
-pwd
-ls -la
+# Change to the app directory
+cd /app || { echo "Failed to change to /app directory"; exit 1; }
 
 # Install any additional dependencies
-pip install -r /app/requirements.txt
+pip install -r requirements.txt
 
 # Start the Flask application
 echo "Starting Python server..."
-exec python /app/server/app.py
+exec python server/app.py
