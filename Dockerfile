@@ -24,11 +24,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy client directory first
 COPY client/ ./client/
 
-# Install Node.js dependencies
-RUN cd client && npm install
-
 # Copy server code
 COPY server/ ./server/
+
+# Install Node.js dependencies
+RUN cd client && npm install
 
 # Expose port
 EXPOSE 5000
