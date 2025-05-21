@@ -1,54 +1,38 @@
-# Build stage
+# Base image
 FROM python:3.9-slim
-
-# Install minimal system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    nodejs \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install pre-built packages
-RUN pip install --no-cache-dir \
-    face-recognition-models==0.3.0 \
-    numpy \
-    Pillow \
-    Click \
-    dlib==19.22.0 \
-    && \
-    # Install face-recognition
-    pip install --no-cache-dir face-recognition==1.3.0
-
-# Final stage
-FROM python:3.9-slim
-
-# Copy system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    nodejs \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy Python dependencies from builder
-COPY --from=builder /usr/local/lib/python3.9/dist-packages/ /usr/local/lib/python3.9/dist-packages/
-
-# Install face-recognition
-RUN pip install --no-cache-dir face-recognition==1.3.0
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files first and verify
-COPY package.json package-lock.json ./
-RUN ls -la && cat package.json
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    nodejs \
+    npm \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy and install Node.js dependencies
+COPY client/package*.json ./client/
+RUN cd client && npm install
+
+# Copy application code
+COPY server/ ./server/
+COPY client/ ./client/
+COPY start.sh .
+
+# Expose port
+EXPOSE 5000
+
+# Start command
+CMD ["bash", "start.sh"]
 RUN npm install --legacy-peer-deps
 
 # Copy the rest of the application
