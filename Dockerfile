@@ -15,8 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python requirements
+# Copy requirements.txt first
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy and install Node.js dependencies
@@ -29,7 +31,6 @@ COPY client/ ./client/
 
 # Expose port
 EXPOSE 5000
-    pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables
 ENV FLASK_APP=server/app.py
@@ -37,10 +38,6 @@ ENV FLASK_ENV=production
 ENV SECRET_KEY=3456789888
 ENV PORT=5000
 ENV MONGODB_URI=mongodb+srv://swaathy:MveSJIZ5tddtg7n7@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
-
-# Expose ports
-EXPOSE 5000
-EXPOSE 10000
 
 # Start the application
 CMD ["python", "server/app.py"]
