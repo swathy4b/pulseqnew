@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I-SmartQueue - Intelligent Queue Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32?text=F">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>I-SmartQueue</h1>
+            <p class="subtitle">Revolutionize Your Queue Experience with AI</p>
+            <div class="header-buttons">
+                <button class="monitor-btn" id="liveMonitoringBtn" aria-label="Live Monitoring">
+                    <i class="fas fa-video"></i> Live Monitoring
+                </button>
+                <button class="settings-btn" aria-label="Open Settings">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="qr-section">
+                <h2>Join the Queue</h2>
+                <div class="qr-container">
+                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" alt="Scan to Join Queue" class="qr-code" id="qrCode">
+                </div>
+                <div class="instruction">
+                    <i class="fas fa-info-circle"></i> Scan with your phone to join remotely
+                </div>
+                <button class="join-button" id="simulateJoin">
+                    <i class="fas fa-plus-circle"></i> Join Queue (Demo)
+                </button>
+            </section>
+
+            <section class="queue-section">
+                <div class="queue-header">
+                    <h2>Current Queue</h2>
+                    <span class="queue-stats" id="queueStats">0 people waiting</span>
+                </div>
+                <div class="queue-items" id="queueItems"></div>
+                <div class="queue-controls">
+                    <button class="control-button" id="processNext">
+                        <i class="fas fa-forward"></i> Serve Next
+                    </button>
+                    <button class="control-button danger" id="clearQueue">
+                        <i class="fas fa-trash"></i> Clear Queue
+                    </button>
+                </div>
+            </section>
+
+            <section class="queue-section overflow-queue" id="overflowQueue">
+                <div class="queue-header">
+                    <h2>Overflow Queue</h2>
+                    <span class="queue-stats" id="overflowQueueStats">0 people waiting</span>
+                </div>
+                <div class="queue-items" id="overflowQueueItems"></div>
+            </section>
+        </main>
+
+        <aside class="queue-display">
+            <div class="now-serving">
+                <h3>Now Serving</h3>
+                <div class="number-display" id="nowServing">--</div>
+            </div>
+            <div class="next-up">
+                <h3>Next Up</h3>
+                <div class="number-display" id="nextUp">--</div>
+            </div>
+            <div class="analytics-preview">
+                <h3>Quick Stats</h3>
+                <p id="avgWaitTime">Avg Wait: -- min</p>
+                <p id="liveCount">Live Count: -- people</p>
+            </div>
+        </aside>
+    </div>
+
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <h3>Notifications</h3>
+            <button class="close-btn" id="closeNotifications">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="notification-list" id="notificationList"></div>
+    </div>
+
+    <div class="modal" id="liveMonitoringModal" style="display: none;">
+        <div class="modal-content live-monitoring-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Live Crowd Monitoring</h2>
+                <button class="close-btn" id="closeLiveMonitoring">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="live-feed">
+                <div class="video-container">
+                    <div id="riskBar"></div>
+                    <img src="" alt="Live camera feed" id="liveFeed">
+                    <div class="detection-overlay" id="detectionOverlay"></div>
+                </div>
+                <div class="detection-stats">
+                    <div class="stats-card">
+                        <h3>Current Count</h3>
+                        <div class="stat-value" id="currentCount">0</div>
+                    </div>
+                    <div class="stats-card">
+                        <h3>Status</h3>
+                        <div class="stat-value status" id="crowdStatus">Normal</div>
+                    </div>
+                    <div class="control-buttons">
+                        <button class="control-button" id="startBtn" disabled>
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button class="control-button danger" id="stopBtn">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-section">
+                <button class="analysis-btn" id="showAnalysisDashboard">
+                    <i class="fas fa-chart-bar"></i> Crowd Analysis Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="analysisDashboardModal">
+        <div class="modal-content analysis-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Crowd Analysis Dashboard</h2>
+                <button class="close-btn" id="closeAnalysisDashboard">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="dashboard-metrics">
+                <div class="metric-card">
+                    <h3>Daily Peak</h3>
+                    <div class="metric-value" id="dailyPeak">0</div>
+                    <div class="metric-time" id="peakTime">at --:--</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Daily Average</h3>
+                    <div class="metric-value" id="dailyAverage">0</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Daily Minimum</h3>
+                    <div class="metric-value" id="dailyMinimum">0</div>
+                    <div class="metric-time" id="minTime">at --:--</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Busy Hours</h3>
+                    <div class="metric-value" id="busyHours">--:-- to --:--</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Daily Crime Summary</h3>
+                    <div class="metric-value" id="facesMatched">3</div>
+                    <div class="metric-time">Faces matched</div>
+                    <div class="metric-value" id="actionsFlagged">5</div>
+                    <div class="metric-time">Suspicious actions flagged</div>
+                    <div class="metric-value" id="peakTimeSummary">6 PM</div>
+                    <div class="metric-time">Peak crowd time</div>
+                </div>
+            </div>
+            <div class="info-card">✅ System healthy. No critical alerts.</div>
+            <div class="insight-card">📈 Crowd flow is optimal. No bottlenecks detected.</div>
+            <div class="dashboard-charts">
+                <div class="chart-container">
+                    <h3>Hourly Crowd Trends</h3>
+                    <canvas id="hourlyTrendChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Weekly Patterns</h3>
+                    <canvas id="weeklyPatternsChart"></canvas>
+                </div>
+            </div>
+            <div class="dashboard-controls">
+                <button class="dashboard-button danger" id="simulateCrime">
+                    <i class="fas fa-exclamation-triangle"></i> Simulate Suspicious Activity
+                </button>
+                <button class="dashboard-button danger" id="evacuateBtn">
+                    <i class="fas fa-bullhorn"></i> Trigger Evacuation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="joinModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Join the Queue</h2>
+            <form id="joinForm">
+                <div class="input-group">
+                    <label for="userName">Your Name <span class="required">*</span></label>
+                    <input type="text" id="userName" placeholder="Enter your name" required aria-required="true">
+                </div>
+                <div class="input-group">
+                    <label for="userPhone">Phone Number (optional)</label>
+                    <input type="tel" id="userPhone" placeholder="Enter your phone number">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="modal-button cancel" id="cancelJoin">Cancel</button>
+                    <button type="submit" class="modal-button confirm" id="confirmJoin">Join Queue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-content">
+            <i class="fas fa-check-circle"></i>
+            <span id="notificationMessage"></span>
+        </div>
+    </div>
+
+    <button class="notification-toggle" id="toggleNotifications">
+        <i class="fas fa-bell"></i>
+        <span class="notification-badge" id="notificationBadge">0</span>
+    </button>
+
+    <div class="modal" id="faceMatchModal" style="display:none;">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Suspect Matched</h2>
+                <button class="close-btn" id="closeFaceMatchModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="suspect-info">
+                <img src="https://placehold.co/120x120?text=Suspect" alt="Suspect Snapshot" style="border-radius:10px;margin-bottom:10px;">
+                <div><b>Name:</b> John Doe</div>
+                <div><b>Age:</b> 32</div>
+                <div><b>Criminal Record:</b> Theft, Assault</div>
+                <div><b>Location:</b> Main Entrance</div>
+                <div><b>Tracking:</b> Entered: Platform 1 → Moved to Exit Gate in 2 mins</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="dashboard-tabs">
+        <button class="tab-btn" data-tab="mainSection">Live Monitoring</button>
+        <button class="tab-btn" data-tab="heatmapSection">Heatmap</button>
+        <button class="tab-btn" data-tab="trackingSection">Tracking</button>
+        <button class="tab-btn" data-tab="reportsSection">Reports</button>
+        <button class="tab-btn" data-tab="predictionSection">Prediction</button>
+    </nav>
+
+    <!-- Main Section (Live Monitoring) -->
+    <section id="mainSection">
+        <!-- Existing liveMonitoringModal and dashboard go here -->
+    </section>
+
+    <!-- Heatmap Section -->
+    <section id="heatmapSection" style="display:none;">
+        <h2>Heatmap of Crowd Density</h2>
+        <div id="heatmapContainer">
+            <!-- Simulated heatmap grid -->
+            <canvas id="heatmapCanvas" width="600" height="200"></canvas>
+            <div class="heatmap-legend">
+                <span class="legend-green"></span> Safe
+                <span class="legend-orange"></span> Moderate
+                <span class="legend-red"></span> Overcrowded
+            </div>
+        </div>
+    </section>
+
+    <!-- Tracking Section -->
+    <section id="trackingSection" style="display:none;">
+        <h2>Suspect Tracking Across Cameras</h2>
+        <div id="trackingMapContainer">
+            <img src="https://placehold.co/400x200?text=Floor+Map" alt="Floor Map" style="width:400px;">
+            <svg id="trackingPath" width="400" height="200">
+                <polyline points="50,180 150,100 350,50" style="fill:none;stroke:red;stroke-width:4;" />
+                <circle cx="50" cy="180" r="8" fill="blue" />
+                <circle cx="350" cy="50" r="8" fill="red" />
+            </svg>
+            <!-- Suspect image at the exit -->
+            <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Suspect" style="position:absolute; left:340px; top:40px; width:36px; height:36px; border-radius:50%; border:2px solid #ff3860; box-shadow:0 2px 8px rgba(0,0,0,0.15); z-index:10;" />
+            <div class="tracking-info">Path: Camera 1 → Camera 2 → Exit</div>
+        </div>
+    </section>
+
+    <!-- Reports Section -->
+    <section id="reportsSection" style="display:none;">
+        <h2>Behavior Analysis Reports</h2>
+        <div class="reports-summary">
+            <div>Faces Detected: <span id="reportFaces">12</span></div>
+            <div>Threats Detected: <span id="reportThreats">2</span></div>
+            <div>Peak Time: <span id="reportPeak">6 PM</span></div>
+        </div>
+        <div class="reports-charts">
+            <canvas id="reportBarChart" width="400" height="200"></canvas>
+            <canvas id="reportPieChart" width="200" height="200"></canvas>
+        </div>
+    </section>
+
+    <!-- Prediction Section -->
+    <section id="predictionSection" style="display:none;">
+        <h2>🧠 AI Crowd Prediction</h2>
+        <div class="prediction-controls">
+            <label for="predictionLocation">Select Location/Camera:</label>
+            <select id="predictionLocation">
+                <option>Main Entrance</option>
+                <option>Camera 1</option>
+                <option>Camera 2</option>
+                <option>Exit Gate</option>
+            </select>
+        </div>
+        <canvas id="predictionChart" width="600" height="200"></canvas>
+        <div class="prediction-note">Prediction based on historical data + real-time input</div>
+    </section>
+
+    <!-- Face Snapshot Panel -->
+    <div id="faceSnapshotPanel" class="face-snapshot-panel">
+        <h3>Detected Face</h3>
+        <img id="faceSnapshotImg" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Face Snapshot">
+        <div id="faceMatchInfo"></div>
+    </div>
+
+    <!-- Floating Evacuate Now Button -->
+    <button id="evacuateNowBtn" class="evacuate-btn">
+        <i class="fas fa-exclamation-triangle"></i>
+        🚨 Evacuate Now
+    </button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="script.js"></script> <!-- Adjusted path to match server/static -->
+</body>
+</html>
