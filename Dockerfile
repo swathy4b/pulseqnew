@@ -26,17 +26,19 @@ RUN cd client && npm install
 # Copy application code
 COPY server/ ./server/
 COPY client/ ./client/
-COPY start.sh .
 
-# Expose port
+# Install nginx for serving static files
+RUN apt-get update && apt-get install -y nginx
+
+# Copy nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose ports
+EXPOSE 80
 EXPOSE 5000
 
-# Start command
-CMD ["bash", "start.sh"]
-RUN npm install --legacy-peer-deps
-
-# Copy the rest of the application
-COPY . .
+# Start both nginx and Flask server
+CMD ["sh", "-c", "python server/server.py & nginx -g 'daemon off;'"], "TargetLintErrorIds": []
 
 # Copy requirements.txt first
 COPY requirements.txt ./
