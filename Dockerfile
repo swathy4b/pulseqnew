@@ -50,15 +50,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Set environment variables
 ENV FLASK_APP=server/app.py
 ENV FLASK_ENV=production
-ENV SECRET_KEY=your-secret-key-here
+ENV SECRET_KEY=3456789888
 ENV PORT=5000
+ENV MONGODB_URI=mongodb+srv://swaathy:MveSJIZ5tddtg7n7@smartqueue.unjf9yz.mongodb.net/?retryWrites=true&w=majority&appName=smartqueue
 
 # Expose ports
 EXPOSE 5000
 EXPOSE 10000
 
-# Create start script
-RUN echo '#!/bin/bash\npython server/app.py &\nnode server/server.js' > start.sh && chmod +x start.sh
-
 # Start the application
-CMD ["bash", "start.sh"]
+CMD ["python", "server/app.py"]
