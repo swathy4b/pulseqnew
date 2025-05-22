@@ -8,11 +8,8 @@ pwd
 echo -e "\n=== Directory structure ==="
 find /app -type d | sort
 
-echo -e "\n=== Contents of /app/server ==="
-ls -la /app/server
-
-# Change to the server directory
-cd /app/server || { echo "Failed to change to /app/server directory"; exit 1; }
+echo -e "\n=== Contents of /app ==="
+ls -la /app
 
 # Install any additional dependencies
 pip install -r /app/requirements.txt
