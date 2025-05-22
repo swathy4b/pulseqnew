@@ -464,11 +464,14 @@ def get_status():
 
 @app.route('/health')
 def health_check():
-    return jsonify({
+    response = jsonify({
         'status': 'success',
         'message': 'Server is healthy',
         'timestamp': datetime.datetime.now().isoformat()
     })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response
 
 @app.route('/static/<path:path>')
 def serve_static(path):
