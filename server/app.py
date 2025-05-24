@@ -464,13 +464,39 @@ def get_status():
 
 @app.route('/health')
 def health_check():
-    response = jsonify({
-        'status': 'success',
-        'message': 'Server is healthy',
-        'timestamp': datetime.datetime.now().isoformat()
-    })
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    """Health check endpoint that returns the status of the application."""
+    try:
+        # Check database connection if you have one
+        # Example: db.session.execute('SELECT 1')
+        
+        # Check if the application is ready to accept requests
+        status = {
+            'status': 'healthy',
+            'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+            'version': '1.0.0',
+            'services': {
+                'web': True,
+                'database': True,  # Set to False if you want to indicate a database issue
+                'camera': True     # Add other services as needed
+            }
+        }
+        status_code = 200
+    except Exception as e:
+        app.logger.error(f"Health check failed: {str(e)}")
+        status = {
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.datetime.utcnow().isoformat() + 'Z'
+        }
+        status_code = 503
+    
+    response = jsonify(status)
+    response.status_code = status_code
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     return response
 
 @app.route('/static/<path:path>')
@@ -484,18 +510,23 @@ def handle_connect():
     logger.debug("New client connected")
     emit('status', {'running': is_running, 'count': crowd_count})
 
-if __name__ == '__main__':
-    import logging
-    logging.getLogger('werkzeug').setLevel(logging.ERROR)
-    print("Starting server in production mode (no debug, no watchdog)")
-    
-    # Initialize face detection before starting server
+# Initialize the application
+def create_app():
+    # Initialize face detection
     print("Initializing face detection model...")
     if not initialize_face_detection():
         print("Failed to initialize face detection model")
         sys.exit(1)
     print("Face detection model initialized successfully")
-            
-    # Start server
+    
+    return app
+
+if __name__ == '__main__':
+    import logging
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
+    print("Starting server in development mode")
+    
+    # Create and run the app
+    app = create_app()
     print(f"Starting Flask server on port {port}...")
     socketio.run(app, debug=False, host='0.0.0.0', port=port)

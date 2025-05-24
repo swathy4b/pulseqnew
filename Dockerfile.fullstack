@@ -34,18 +34,29 @@ RUN pip install --upgrade pip && \
 # Copy application files
 COPY . .
 
-# Make start script executable and convert line endings
-RUN sed -i 's/\r$//' start.sh && \
-    chmod +x start.sh && \
-    dos2unix start.sh
+# Make scripts executable and convert line endings
+RUN apt-get update && apt-get install -y dos2unix curl && \
+    sed -i 's/\r$//' start.sh healthcheck.sh && \
+    chmod +x start.sh healthcheck.sh && \
+    dos2unix start.sh healthcheck.sh && \
+    rm -rf /var/lib/apt/lists/*
 
-# Verify start.sh exists and is executable
-RUN ls -la start.sh && \
-    file start.sh && \
-    ./start.sh --version || echo "Start script check complete"
+# Verify scripts
+RUN ls -la start.sh healthcheck.sh && \
+    file start.sh healthcheck.sh
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD ["/bin/bash", "-c", "./healthcheck.sh"] || exit 1
 
 # Expose ports
 EXPOSE 5000
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Start the application
 CMD ["/bin/bash", "-c", "./start.sh"]
