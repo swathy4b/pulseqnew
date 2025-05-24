@@ -1,13 +1,22 @@
 [build]
-command = "npm install && cd client && npm install && cd ../server && npm install && python -m pip install -r requirements.txt"
+  builder = "nixpacks"
+  buildCommand = "pip install -r requirements.txt && npm install"
+  installCommand = "echo 'Skipping install step'"
+  startCommand = "./start.sh"
 
 [deploy]
-command = "bash start.sh"
+  startCommand = "./start.sh"
+  healthcheckPath = "/health"
+  healthcheckTimeout = 60
+  restartDelay = 5
+  restartMaxRetries = 3
+  restartTimeout = 180
 
 [env]
-PORT = "5000"
-NODE_ENV = "production"
-FLASK_ENV = "production"
+  PORT = "5000"
+  NODE_ENV = "production"
+  FLASK_APP = "wsgi:application"
+  FLASK_ENV = "production"
 
 [project]
-name = "pulseq"
+  name = "pulseq"
