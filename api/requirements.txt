@@ -1,0 +1,13 @@
+Flask==2.3.3
+Flask-SocketIO==5.3.6
+eventlet==0.33.3
+numpy==1.24.3
+opencv-python==4.8.0.74
+pymongo==4.5.0
+python-dotenv==1.0.0
+mediapipe==0.10.18
+qrcode==7.4.2
+flask-cors==4.0.0
+python-socketio==5.13.0
+python-engineio==4.12.1
+werkzeug==2.3.7

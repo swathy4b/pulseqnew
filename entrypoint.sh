@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 
 # Set default values
 export PORT=${PORT:-5000}
@@ -17,6 +17,14 @@ cd /app
 echo "Installing dependencies..."
 pip install --no-cache-dir -r requirements.txt flask gunicorn
 
-# Start the Flask app directly with Python (no Gunicorn for now)
+# Verify network interfaces
+echo "=== Network Interfaces ==="
+cat /etc/hosts
+echo "========================="
+
+# Start the Flask app directly with Python
 echo "Starting Flask app on ${HOST}:${PORT}..."
-exec python -u -m flask run --host=${HOST} --port=${PORT}
+
+# Run the app with explicit binding to 0.0.0.0
+# and enable debug output
+exec python -u -m flask run --host=0.0.0.0 --port=${PORT} --debug
