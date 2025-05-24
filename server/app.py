@@ -459,45 +459,42 @@ def get_status():
     return jsonify({
         'running': is_running,
         'count': crowd_count,
-        'timestamp': datetime.datetime.now().isoformat()
+        'timestamp': datetime.datetime.now().isoformat(),
+        'status': 'operational',
+        'version': '1.0.0'
+    })
+
+@app.route('/test')
+def test_endpoint():
+    """Simple test endpoint to verify the application is running"""
+    return jsonify({
+        'status': 'success',
+        'message': 'Test endpoint is working!',
+        'service': 'pulseq',
+        'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+        'version': '1.0.0'
     })
 
 @app.route('/health')
 def health_check():
     """Health check endpoint that returns the status of the application."""
     try:
-        # Check database connection if you have one
-        # Example: db.session.execute('SELECT 1')
-        
-        # Check if the application is ready to accept requests
+        # Simple health check response
         status = {
             'status': 'healthy',
-            'timestamp': datetime.datetime.utcnow().isoformat() + 'Z',
+            'service': 'pulseq',
             'version': '1.0.0',
-            'services': {
-                'web': True,
-                'database': True,  # Set to False if you want to indicate a database issue
-                'camera': True     # Add other services as needed
-            }
-        }
-        status_code = 200
-    except Exception as e:
-        app.logger.error(f"Health check failed: {str(e)}")
-        status = {
-            'status': 'unhealthy',
-            'error': str(e),
             'timestamp': datetime.datetime.utcnow().isoformat() + 'Z'
         }
-        status_code = 503
-    
-    response = jsonify(status)
-    response.status_code = status_code
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
+        return jsonify(status), 200
+        
+    except Exception as e:
+        app.logger.error(f"Health check failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': datetime.datetime.utcnow().isoformat() + 'Z'
+        }), 500
 
 @app.route('/static/<path:path>')
 def serve_static(path):
