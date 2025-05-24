@@ -3,11 +3,19 @@
 # Exit on error
 set -e
 
+# Enable debugging
+set -x
+
 # Set default values
 export PORT=${PORT:-5000}
 export HOST=${HOST:-0.0.0.0}
 export FLASK_APP=${FLASK_APP:-wsgi:application}
 export FLASK_ENV=${FLASK_ENV:-production}
+
+# Print environment for debugging
+echo "=== Environment Variables ==="
+printenv | sort
+echo "==========================="
 
 # Change to the app directory
 cd /app
@@ -38,15 +46,19 @@ check_health() {
 
 # Start the application in the background
 echo "Starting Gunicorn with Socket.IO..."
-gunicorn --worker-class eventlet \
-         -w 1 \
-         --bind ${HOST}:${PORT} \
-         --timeout 120 \
-         --access-logfile - \
-         --error-logfile - \
-         --preload \
-         --worker-connections 1000 \
-         wsgi:application &
+# Use exec to replace the current process with gunicorn
+exec gunicorn --worker-class eventlet \
+    -w 1 \
+    --bind ${HOST}:${PORT} \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile - \
+    --preload \
+    --worker-connections 1000 \
+    --log-level debug \
+    --capture-output \
+    --enable-stdio-inheritance \
+    wsgi:application
 
 # Store the PID
 GUNICORN_PID=$!
