@@ -15,8 +15,8 @@ echo "=== Environment Variables ==="
 printenv | sort
 echo "==========================="
 
-# Change to the app directory
-cd /app
+# Change to the server directory
+cd /app/server
 
 echo "=== Starting Server ==="
 echo "Working directory: $(pwd)"
@@ -25,11 +25,9 @@ printenv | sort
 echo -e "\nDirectory contents:"
 ls -la
 
-# Install any additional dependencies
-if [ -f "requirements.txt" ]; then
-    echo "Installing Python dependencies..."
-    pip install --no-cache-dir -r requirements.txt
-fi
+# Install Python dependencies
+echo "Installing Python dependencies..."
+pip install --no-cache-dir -r requirements.txt
 
 # Function to check if the app is ready
 check_health() {
@@ -43,9 +41,9 @@ check_health() {
     fi
 }
 
-# Start the minimal Flask app in the background
-echo "Starting minimal Flask app..."
-python minimal_app.py &
+# Start the Flask app in the background
+echo "Starting Flask application..."
+python app.py &
 
 # Store the PID
 FLASK_PID=$!
