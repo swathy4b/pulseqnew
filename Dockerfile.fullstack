@@ -2,77 +2,38 @@ FROM python:3.10-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    python3-dev \
-    build-essential \
     curl \
-    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONPATH="/app:${PYTHONPATH}"
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-COPY requirements.txt ./
-
-# Install Node.js and npm
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js dependencies
-RUN npm install
-
-# Install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt eventlet gunicorn
-
-# Copy only required files first
-COPY start.sh healthcheck.sh minimal_app.py ./
-
-# Install script dependencies and fix line endings
-RUN apt-get update && apt-get install -y dos2unix curl && \
-    # Fix line endings and make scripts executable
-    sed -i 's/\r$//' start.sh healthcheck.sh minimal_app.py && \
-    chmod +x start.sh healthcheck.sh && \
-    dos2unix start.sh healthcheck.sh minimal_app.py && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir flask gunicorn
-
-# Verify files are present and executable
-RUN ls -la start.sh healthcheck.sh minimal_app.py && \
-    [ -f start.sh ] && [ -x start.sh ] && \
-    [ -f healthcheck.sh ] && [ -x healthcheck.sh ] && \
-    [ -f minimal_app.py ] || (echo "Required files are missing" && exit 1)
-
-# Health check configuration
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD ["/bin/bash", "-c", "./healthcheck.sh"] || exit 1
-
-# Expose ports
-EXPOSE 5000
-
-# Set environment variables
-ENV PYTHONUNBUFFERED=1 \
+ENV FLASK_APP=app.py \
+    FLASK_ENV=production \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# Set working directory
+WORKDIR /app
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt flask gunicorn
+
+# Copy application files
+COPY app.py entrypoint.sh ./
+
+# Make scripts executable
+RUN chmod +x /app/entrypoint.sh
+
+# Expose port
+EXPOSE 5000
+
+# Health check configuration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:5000/health || exit 1
+
 # Start the application
-CMD ["/bin/bash", "-c", "./start.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
