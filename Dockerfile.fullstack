@@ -34,12 +34,18 @@ RUN pip install --upgrade pip && \
 # Copy application files
 COPY . .
 
-# Make start script executable
-RUN chmod +x start.sh
+# Make start script executable and convert line endings
+RUN sed -i 's/\r$//' start.sh && \
+    chmod +x start.sh && \
+    dos2unix start.sh
+
+# Verify start.sh exists and is executable
+RUN ls -la start.sh && \
+    file start.sh && \
+    ./start.sh --version || echo "Start script check complete"
 
 # Expose ports
-EXPOSE 10000
 EXPOSE 5000
 
-# Start both servers
-CMD ["./start.sh"] 
+# Start the application
+CMD ["/bin/bash", "-c", "./start.sh"]

@@ -2,10 +2,10 @@
   builder = "nixpacks"
   buildCommand = "pip install -r requirements.txt && npm install"
   installCommand = "echo 'Skipping install step'"
-  startCommand = "./start.sh"
+  startCommand = "/bin/bash -c 'chmod +x start.sh && ./start.sh'"
 
 [deploy]
-  startCommand = "./start.sh"
+  startCommand = "/bin/bash -c 'chmod +x start.sh && ./start.sh'"
   healthcheckPath = "/health"
   healthcheckTimeout = 60
   restartDelay = 5
