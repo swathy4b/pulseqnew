@@ -7,47 +7,44 @@ set -e
 set -x
 
 # Set default values
-export PORT=${PORT:-5000}
-export HOST=${HOST:-0.0.0.0}
+export PORT=${PORT:-3000}
+export BACKEND_PORT=5000
+export HOST=0.0.0.0
 
 # Print environment for debugging
 echo "=== Environment Variables ==="
 printenv | sort
 echo "==========================="
 
-# Change to the server directory
-cd /app/server
+# Install Python dependencies if needed
+echo "=== Setting up Python Backend ==="
+cd server
+if [ -f "requirements.txt" ]; then
+    pip install -r requirements.txt
+fi
 
-echo "=== Starting Server ==="
-echo "Working directory: $(pwd)"
-echo "Environment variables:"
-printenv | sort
-echo -e "\nDirectory contents:"
-ls -la
+# Start Python backend in background
+echo "Starting Python backend on port ${BACKEND_PORT}..."
+python app.py --port=${BACKEND_PORT} &
+PYTHON_PID=$!
+echo "Python backend started with PID: ${PYTHON_PID}"
 
-# Install Python dependencies
-echo "Installing Python dependencies..."
-pip install --no-cache-dir -r requirements.txt
+# Go back to project root
+cd ..
 
-# Function to check if the app is ready
-check_health() {
-    echo "Checking application health at http://localhost:${PORT}/health"
-    if curl -sSf --max-time 2 "http://localhost:${PORT}/health" > /dev/null 2>&1; then
-        echo "✅ Health check passed!"
-        return 0
-    else
-        echo "❌ Health check failed"
-        return 1
-    fi
-}
+# Install Node.js dependencies
+echo "=== Setting up Node.js Frontend ==="
+if [ -f "package.json" ]; then
+    npm install
+fi
 
-# Start the Flask app in the background
-echo "Starting Flask application on ${HOST}:${PORT}..."
-python app.py &
+# Start Node.js server
+echo "Starting Node.js server on port ${PORT}..."
+node server.js
 
-# Store the PID
-FLASK_PID=$!
-echo "Flask app started with PID: ${FLASK_PID}"
+# Clean up Python process when Node.js exits
+echo "Shutting down Python backend..."
+kill $PYTHON_PID 2>/dev/null || true
 
 # Wait for the application to start
 MAX_RETRIES=10
