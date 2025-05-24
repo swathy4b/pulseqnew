@@ -7,16 +7,50 @@
 [deploy]
   startCommand = "/bin/bash -c 'chmod +x start.sh && ./start.sh'"
   healthcheckPath = "/health"
-  healthcheckTimeout = 60
+  healthcheckTimeout = 30
+  healthcheckInterval = 15
+  healthcheckStartPeriod = 30
   restartDelay = 5
-  restartMaxRetries = 3
-  restartTimeout = 180
+  restartMaxRetries = 5
+  restartTimeout = 300
+  replicas = 1
 
 [env]
+  # Server Configuration
   PORT = "5000"
+  HOST = "0.0.0.0"
+  DEBUG = "False"
+  
+  # Application Settings
   NODE_ENV = "production"
   FLASK_APP = "wsgi:application"
   FLASK_ENV = "production"
+  SECRET_KEY = "your-secret-key-here"
+  
+  # Database Configuration (uncomment and configure as needed)
+  # DATABASE_URL = "postgresql://user:password@localhost/dbname"
+  # MONGO_URI = "mongodb://user:password@localhost:27017/dbname"
+  
+  # CORS Configuration
+  CORS_ORIGINS = "*"
+  
+  # Session Configuration
+  SESSION_TYPE = "filesystem"
+  SESSION_COOKIE_SECURE = "True"
+  
+  # Logging
+  LOG_LEVEL = "INFO"
+  LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 [project]
   name = "pulseq"
+  description = "PulseQ Application"
+  
+[health]
+  enabled = true
+  path = "/health"
+  initial_delay = 10
+  timeout_seconds = 5
+  period_seconds = 15
+  success_threshold = 1
+  failure_threshold = 3
