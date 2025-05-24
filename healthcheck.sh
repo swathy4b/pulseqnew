@@ -6,17 +6,16 @@ set -e
 # Set default values
 PORT=${PORT:-5000}
 HOST=${HOST:-0.0.0.0}
-TIMEOUT=${TIMEOUT:-5}
-MAX_RETRIES=${MAX_RETRIES:-3}
-RETRY_DELAY=${RETRY_DELAY:-1}
+MAX_RETRIES=3
+RETRY_DELAY=2
 
 # Function to check health endpoint
 check_health() {
     local url="http://${HOST}:${PORT}/health"
     echo "Checking health at: ${url}"
     
-    # Try to get health status with timeout
-    if response=$(curl -sSf --max-time ${TIMEOUT} "${url}"); then
+    # Try to get health status with 2 second timeout
+    if response=$(curl -sSf --max-time 2 "${url}"); then
         echo "Health check successful"
         echo "Response: ${response}"
         # Extract status from JSON response (requires jq or similar, using grep for simplicity)
