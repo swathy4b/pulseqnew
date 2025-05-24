@@ -31,8 +31,8 @@ pip install --no-cache-dir -r requirements.txt
 
 # Function to check if the app is ready
 check_health() {
-    echo "Checking application health..."
-    if curl -sSf "http://localhost:${PORT}/health" > /dev/null 2>&1; then
+    echo "Checking application health at http://localhost:${PORT}/health"
+    if curl -sSf --max-time 2 "http://localhost:${PORT}/health" > /dev/null 2>&1; then
         echo "✅ Health check passed!"
         return 0
     else
@@ -42,7 +42,7 @@ check_health() {
 }
 
 # Start the Flask app in the background
-echo "Starting Flask application..."
+echo "Starting Flask application on ${HOST}:${PORT}..."
 python app.py &
 
 # Store the PID

@@ -519,11 +519,17 @@ def create_app():
     return app
 
 if __name__ == '__main__':
+    import os
     import logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
-    print("Starting server in development mode")
+    
+    # Get port from environment variable or use default
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '0.0.0.0')
+    
+    print(f"Starting server in development mode on {host}:{port}")
     
     # Create and run the app
     app = create_app()
-    print(f"Starting Flask server on port {port}...")
-    socketio.run(app, debug=False, host='0.0.0.0', port=port)
+    print(f"Starting Flask server on {host}:{port}...")
+    socketio.run(app, debug=False, host=host, port=port)

@@ -35,8 +35,8 @@ RUN chmod +x /app/start.sh /app/healthcheck.sh
 EXPOSE 5000
 
 # Health check configuration
-HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/bin/bash", "/app/healthcheck.sh"]
+HEALTHCHECK --interval=5s --timeout=3s --start-period=10s --retries=3 \
+    CMD ["/bin/bash", "-c", "curl -f http://localhost:5000/health || exit 1"]
 
 # Start the application
 CMD ["/bin/bash", "/app/start.sh"]

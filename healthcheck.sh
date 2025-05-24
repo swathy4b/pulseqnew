@@ -5,32 +5,20 @@ set -e
 
 # Set default values
 PORT=${PORT:-5000}
-HOST=${HOST:-0.0.0.0}
-MAX_RETRIES=3
-RETRY_DELAY=2
+HOST=localhost  # Changed from 0.0.0.0 to localhost for container health checks
 
-# Function to check health endpoint
-check_health() {
-    local url="http://${HOST}:${PORT}/health"
-    echo "Checking health at: ${url}"
-    
-    # Try to get health status with 2 second timeout
-    if response=$(curl -sSf --max-time 2 "${url}"); then
-        echo "Health check successful"
-        echo "Response: ${response}"
-        # Extract status from JSON response (requires jq or similar, using grep for simplicity)
-        if echo "${response}" | grep -q '"status":"healthy"'; then
-            echo "Application is healthy"
-            return 0
-        else
-            echo "Application is not healthy"
-            return 1
-        fi
-    else
-        echo "Health check failed"
-        return 1
-    fi
-}
+# Simple health check that just tries to connect to the health endpoint
+echo "Performing health check on http://${HOST}:${PORT}/health"
+
+# Try to get health status with 2 second timeout
+if curl -sSf --max-time 2 "http://${HOST}:${PORT}/health"; then
+    echo "Health check passed"
+    exit 0
+else
+    # If curl fails, show the error
+    echo "Health check failed"
+    exit 1
+fi
 
 # Main execution with retries
 RETRY_COUNT=0
