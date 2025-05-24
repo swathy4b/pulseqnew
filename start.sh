@@ -9,8 +9,6 @@ set -x
 # Set default values
 export PORT=${PORT:-5000}
 export HOST=${HOST:-0.0.0.0}
-export FLASK_APP=${FLASK_APP:-wsgi:application}
-export FLASK_ENV=${FLASK_ENV:-production}
 
 # Print environment for debugging
 echo "=== Environment Variables ==="
@@ -33,40 +31,25 @@ if [ -f "requirements.txt" ]; then
     pip install --no-cache-dir -r requirements.txt
 fi
 
-# Ensure the server directory exists
-mkdir -p server/static
-
 # Function to check if the app is ready
 check_health() {
     echo "Checking application health..."
-    curl -sSf "http://localhost:${PORT}/health" > /dev/null 2>&1
-    return $?
+    if curl -sSf "http://localhost:${PORT}/health" > /dev/null 2>&1; then
+        echo "✅ Health check passed!"
+        return 0
+    else
+        echo "❌ Health check failed"
+        return 1
+    fi
 }
 
-# Start the application in the background
-echo "Starting Gunicorn with Socket.IO..."
-
-gunicorn \
-    --worker-class eventlet \
-    -w 1 \
-    --bind ${HOST}:${PORT} \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info \
-    --capture-output \
-    --enable-stdio-inheritance \
-    --preload \
-    --worker-connections 1000 \
-    --graceful-timeout 30 \
-    --keep-alive 5 \
-    --max-requests 1000 \
-    --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s' \
-    wsgi:application &
+# Start the minimal Flask app in the background
+echo "Starting minimal Flask app..."
+python minimal_app.py &
 
 # Store the PID
-GUNICORN_PID=$!
-echo "Gunicorn started with PID: ${GUNICORN_PID}"
+FLASK_PID=$!
+echo "Flask app started with PID: ${FLASK_PID}"
 
 # Wait for the application to start
 MAX_RETRIES=10
@@ -98,15 +81,15 @@ if [ ${RETRY_COUNT} -eq ${MAX_RETRIES} ]; then
     curl -v "http://localhost:${PORT}/health" || echo "Health check failed"
     
     # Clean up
-    kill ${GUNICORN_PID} 2>/dev/null || true
+    kill ${FLASK_PID} 2>/dev/null || true
     exit 1
 fi
 
 # Set up signal handlers
 cleanup() {
     echo "Shutting down gracefully..."
-    kill -s TERM "${GUNICORN_PID}" 2>/dev/null || true
-    wait "${GUNICORN_PID}" 2>/dev/null || true
+    kill -s TERM "${FLASK_PID}" 2>/dev/null || true
+    wait "${FLASK_PID}" 2>/dev/null || true
     echo "Shutdown complete."
     exit 0
 }
@@ -115,4 +98,4 @@ cleanup() {
 trap cleanup TERM INT
 
 # Keep the script running and wait for the application to exit
-wait ${GUNICORN_PID} || true
+wait ${FLASK_PID} || true

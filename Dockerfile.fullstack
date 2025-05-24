@@ -41,23 +41,25 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt eventlet gunicorn
 
 # Copy only required files first
-COPY start.sh healthcheck.sh ./
-COPY server/ ./server/
-COPY requirements.txt ./
+COPY start.sh healthcheck.sh minimal_app.py ./
 
 # Install script dependencies and fix line endings
 RUN apt-get update && apt-get install -y dos2unix curl && \
     # Fix line endings and make scripts executable
-    sed -i 's/\r$//' start.sh healthcheck.sh && \
+    sed -i 's/\r$//' start.sh healthcheck.sh minimal_app.py && \
     chmod +x start.sh healthcheck.sh && \
-    dos2unix start.sh healthcheck.sh && \
+    dos2unix start.sh healthcheck.sh minimal_app.py && \
     rm -rf /var/lib/apt/lists/*
 
-# Verify scripts are present and executable
-RUN ls -la start.sh healthcheck.sh && \
-    file start.sh healthcheck.sh && \
+# Install Python dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir flask gunicorn
+
+# Verify files are present and executable
+RUN ls -la start.sh healthcheck.sh minimal_app.py && \
     [ -f start.sh ] && [ -x start.sh ] && \
-    [ -f healthcheck.sh ] && [ -x healthcheck.sh ] || (echo "Scripts are missing or not executable" && exit 1)
+    [ -f healthcheck.sh ] && [ -x healthcheck.sh ] && \
+    [ -f minimal_app.py ] || (echo "Required files are missing" && exit 1)
 
 # Health check configuration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
